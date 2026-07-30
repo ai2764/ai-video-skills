@@ -1,0 +1,7 @@
+interface:
+  display_name: "Slow-Motion Redraw Repair"
+  short_description: "Regenerate a broken fast-motion span as slow motion, then restore speed"
+  default_prompt: "Use $slowmo-redraw-repair to fix the mangled fast-motion span in this shot."
+
+policy:
+  allow_implicit_invocation: true
