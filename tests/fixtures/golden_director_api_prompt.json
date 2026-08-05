@@ -1,0 +1,592 @@
+{
+  "55": {
+    "class_type": "LTXDirectorCropGuides",
+    "inputs": {
+      "positive": [
+        "133",
+        0
+      ],
+      "negative": [
+        "133",
+        1
+      ],
+      "latent": [
+        "34",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "18": {
+    "class_type": "LTXVConcatAVLatent",
+    "inputs": {
+      "video_latent": [
+        "132",
+        2
+      ],
+      "audio_latent": [
+        "34",
+        1
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "20": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "21": {
+    "class_type": "BasicScheduler",
+    "inputs": {
+      "model": [
+        "132",
+        3
+      ],
+      "scheduler": "linear_quadratic",
+      "steps": 4,
+      "denoise": 0.42
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "13": {
+    "class_type": "LatentUpscaleModelLoader",
+    "inputs": {
+      "model_name": "ltx-2.3-spatial-upscaler-x2-1.1.safetensors"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "14": {
+    "class_type": "LTXVLatentUpsampler",
+    "inputs": {
+      "samples": [
+        "55",
+        2
+      ],
+      "upscale_model": [
+        "13",
+        0
+      ],
+      "vae": [
+        "36",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "27": {
+    "class_type": "LTXVConditioning",
+    "inputs": {
+      "positive": [
+        "131",
+        1
+      ],
+      "negative": [
+        "128",
+        0
+      ],
+      "frame_rate": [
+        "131",
+        6
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "128": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": [
+        "131",
+        1
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "28": {
+    "class_type": "CFGGuider",
+    "inputs": {
+      "model": [
+        "133",
+        3
+      ],
+      "positive": [
+        "133",
+        0
+      ],
+      "negative": [
+        "133",
+        1
+      ],
+      "cfg": 1
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "29": {
+    "class_type": "LTXVConcatAVLatent",
+    "inputs": {
+      "video_latent": [
+        "133",
+        2
+      ],
+      "audio_latent": [
+        "131",
+        3
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "32": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "33": {
+    "class_type": "BasicScheduler",
+    "inputs": {
+      "model": [
+        "133",
+        3
+      ],
+      "scheduler": "linear_quadratic",
+      "steps": 8,
+      "denoise": 1
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "1": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "54",
+        2
+      ],
+      "vae": [
+        "36",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "2": {
+    "class_type": "CreateVideo",
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ],
+      "audio": [
+        "24",
+        0
+      ],
+      "fps": [
+        "131",
+        6
+      ],
+      "bit_depth": 8
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "37": {
+    "class_type": "SaveVideo",
+    "inputs": {
+      "video": [
+        "2",
+        0
+      ],
+      "filename_prefix": "camera_lab/camera_lab_1785731977_7240/01_director",
+      "format": "auto",
+      "codec": "auto"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "30": {
+    "class_type": "RandomNoise",
+    "inputs": {
+      "noise_seed": 999
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "17": {
+    "class_type": "CFGGuider",
+    "inputs": {
+      "model": [
+        "132",
+        3
+      ],
+      "positive": [
+        "132",
+        0
+      ],
+      "negative": [
+        "132",
+        1
+      ],
+      "cfg": 1
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "34": {
+    "class_type": "LTXVSeparateAVLatent",
+    "inputs": {
+      "av_latent": [
+        "31",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "54": {
+    "class_type": "LTXDirectorCropGuides",
+    "inputs": {
+      "positive": [
+        "132",
+        0
+      ],
+      "negative": [
+        "132",
+        1
+      ],
+      "latent": [
+        "22",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "22": {
+    "class_type": "LTXVSeparateAVLatent",
+    "inputs": {
+      "av_latent": [
+        "19",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "19": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": [
+        "30",
+        0
+      ],
+      "guider": [
+        "17",
+        0
+      ],
+      "sampler": [
+        "20",
+        0
+      ],
+      "sigmas": [
+        "21",
+        0
+      ],
+      "latent_image": [
+        "18",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "31": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": [
+        "30",
+        0
+      ],
+      "guider": [
+        "28",
+        0
+      ],
+      "sampler": [
+        "32",
+        0
+      ],
+      "sigmas": [
+        "33",
+        0
+      ],
+      "latent_image": [
+        "29",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "24": {
+    "class_type": "LTXVAudioVAEDecode",
+    "inputs": {
+      "samples": [
+        "22",
+        1
+      ],
+      "audio_vae": [
+        "8",
+        0
+      ]
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "35": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "ltx-2.3-22b-distilled-1.1_transformer_only_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "6": {
+    "class_type": "VAELoaderKJ",
+    "inputs": {
+      "vae_name": "taeltx2_3.safetensors",
+      "device": "main_device",
+      "weight_dtype": "bf16"
+    },
+    "_meta": {
+      "title": "Tiny VAELoader KJ"
+    }
+  },
+  "12": {
+    "class_type": "DualCLIPLoader",
+    "inputs": {
+      "clip_name1": "gemma_3_12B_it_fp4_mixed.safetensors",
+      "clip_name2": "ltx-2.3_text_projection_bf16.safetensors",
+      "type": "ltxv",
+      "device": "default"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "8": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "LTX23_audio_vae_bf16.safetensors"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "36": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "LTX23_video_vae_bf16.safetensors"
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "10": {
+    "class_type": "ModelPreviewOverrideKJ",
+    "inputs": {
+      "model": [
+        "35",
+        0
+      ],
+      "vae": [
+        "6",
+        0
+      ],
+      "max_resolution": 0,
+      "jpeg_quality": 80,
+      "suppress_default_preview": true,
+      "preview_frames": 240,
+      "preview_fps": 24
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "131": {
+    "class_type": "LTXDirector",
+    "inputs": {
+      "model": [
+        "10",
+        0
+      ],
+      "clip": [
+        "12",
+        0
+      ],
+      "audio_vae": [
+        "8",
+        0
+      ],
+      "start_second": 0,
+      "end_second": 9.0,
+      "duration_seconds": 9.0,
+      "start_frame": 0,
+      "end_frame": 216,
+      "duration_frames": 216,
+      "timeline_data": "{\"segments\": [{\"id\": \"s14_tear_eagle\", \"type\": \"image\", \"label\": \"segment 1\", \"start\": 0, \"length\": 72, \"prompt\": \"The two fists haul the eagle banner apart. The tear rips further down the middle with a jerk, splitting the silver eagle crest in half, threads snapping and lint flying off into the wind; the knuckles whiten and the torn halves flap hard and twist. Dust streams across the desert behind, smoke leans off a burning drum, the small black flags in the distance whip on their poles. The camera shakes with the pull and pushes in on the splitting crest.\", \"imageFile\": \"camera_lab_1785731977_7240_01_director_timeline_01.png\", \"strength\": 0.84}, {\"id\": \"s15_rebel_flag\", \"type\": \"image\", \"label\": \"segment 2\", \"start\": 72, \"length\": 67, \"prompt\": \"In its place the rebel banner rises and takes the wind — a black flag with a pale winged skull, snapping and rolling hard on its pole against the washed desert sky, the fabric cracking taut and rippling along its length, tattered edge whipping. Dust and grit stream past it, a bird crosses far behind, the pole flexes. The camera cranes slowly up the pole and holds under the flying banner.\", \"imageFile\": \"camera_lab_1785731977_7240_01_director_timeline_02.png\", \"strength\": 0.82}, {\"id\": \"s16_desert_base\", \"type\": \"image\", \"label\": \"segment 3\", \"start\": 139, \"length\": 77, \"prompt\": \"High aerial over the finished rebel base: a walled compound of grey blockhouses and watchtowers set alone in the tan desert, the winged skull emblazoned huge on the face of the main hangar, the black flag flying at the wall. The camera drifts forward and down over the perimeter, the near wall sliding out of the bottom of frame as the compound opens up below — convoys crawling in along the road toward the gate, dust trailing behind them, tiny figures crossing the yard, antenna arrays turning. Heat haze shimmers off the plain and cloud shadow slides across the desert. The camera keeps gliding and holds on the compound.\", \"imageFile\": \"camera_lab_1785731977_7240_01_director_timeline_03.png\", \"strength\": 0.82}], \"audioSegments\": []}",
+      "local_prompts": "The two fists haul the eagle banner apart. The tear rips further down the middle with a jerk, splitting the silver eagle crest in half, threads snapping and lint flying off into the wind; the knuckles whiten and the torn halves flap hard and twist. Dust streams across the desert behind, smoke leans off a burning drum, the small black flags in the distance whip on their poles. The camera shakes with the pull and pushes in on the splitting crest. | In its place the rebel banner rises and takes the wind — a black flag with a pale winged skull, snapping and rolling hard on its pole against the washed desert sky, the fabric cracking taut and rippling along its length, tattered edge whipping. Dust and grit stream past it, a bird crosses far behind, the pole flexes. The camera cranes slowly up the pole and holds under the flying banner. | High aerial over the finished rebel base: a walled compound of grey blockhouses and watchtowers set alone in the tan desert, the winged skull emblazoned huge on the face of the main hangar, the black flag flying at the wall. The camera drifts forward and down over the perimeter, the near wall sliding out of the bottom of frame as the compound opens up below — convoys crawling in along the road toward the gate, dust trailing behind them, tiny figures crossing the yard, antenna arrays turning. Heat haze shimmers off the plain and cloud shadow slides across the desert. The camera keeps gliding and holds on the compound.",
+      "segment_lengths": "72,67,77",
+      "epsilon": 0.001,
+      "guide_strength": "0.84,0.82,0.82",
+      "global_prompt": "A continuous cinematic shot out in the desert, where the breakaway force is founded. A pair of weathered, scarred, dirt-blackened hands in torn dark field sleeves grip a filthy black banner bearing the regular army's silver eagle-in-triangle crest and tear it apart down the middle, frayed threads snapping. Beyond, an arid tan plain of scrub and dust runs to low brown mountains, dotted with armoured vehicles, fuel drums, crates and radio masts, black flags snapping on their poles — the new rebel banner, a white winged skull. Photoreal war-film cinematography, hard hazy desert daylight, sand-tan and black palette, dust and smoke streaming across every frame, coherent scale, one unbroken move.",
+      "use_custom_audio": false,
+      "use_custom_motion": true,
+      "inpaint_audio": true,
+      "frame_rate": 24,
+      "display_mode": "seconds",
+      "custom_width": 1280,
+      "custom_height": 704,
+      "resize_method": "maintain aspect ratio",
+      "divisible_by": 32,
+      "img_compression": 18,
+      "override_audio": "",
+      "overrideAudio": false
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "132": {
+    "class_type": "LTXDirectorGuide",
+    "inputs": {
+      "positive": [
+        "55",
+        0
+      ],
+      "negative": [
+        "55",
+        1
+      ],
+      "vae": [
+        "36",
+        0
+      ],
+      "latent": [
+        "14",
+        0
+      ],
+      "guide_data": [
+        "131",
+        4
+      ],
+      "motion_guide_data": [
+        "131",
+        5
+      ],
+      "model": [
+        "131",
+        0
+      ],
+      "ic_lora_name": "None",
+      "ic_lora_strength": 1.0,
+      "scale_by": 1,
+      "upscale_method": "bicubic",
+      "image_attention_strength": 1,
+      "crop": "center",
+      "auto_snap_ic_grid": true,
+      "use_tiled_encode": false,
+      "tile_size": 256,
+      "tile_overlap": 64,
+      "retake_mode": false
+    },
+    "_meta": {
+      "title": ""
+    }
+  },
+  "133": {
+    "class_type": "LTXDirectorGuide",
+    "inputs": {
+      "positive": [
+        "27",
+        0
+      ],
+      "negative": [
+        "27",
+        1
+      ],
+      "vae": [
+        "36",
+        0
+      ],
+      "latent": [
+        "131",
+        2
+      ],
+      "guide_data": [
+        "131",
+        4
+      ],
+      "motion_guide_data": [
+        "131",
+        5
+      ],
+      "model": [
+        "131",
+        0
+      ],
+      "ic_lora_name": "None",
+      "ic_lora_strength": 1.0,
+      "scale_by": 0.5,
+      "upscale_method": "bicubic",
+      "image_attention_strength": 1,
+      "crop": "center",
+      "auto_snap_ic_grid": true,
+      "use_tiled_encode": false,
+      "tile_size": 256,
+      "tile_overlap": 64,
+      "retake_mode": false
+    },
+    "_meta": {
+      "title": ""
+    }
+  }
+}

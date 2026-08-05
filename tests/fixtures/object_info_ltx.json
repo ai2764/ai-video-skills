@@ -1,0 +1,675 @@
+{
+  "LTXDirector": {
+    "input": {
+      "required": {
+        "model": [
+          "MODEL",
+          {}
+        ],
+        "clip": [
+          "CLIP",
+          {}
+        ],
+        "start_second": [
+          "FLOAT",
+          {
+            "tooltip": "Start time in seconds of the timeline generation.",
+            "default": 0.0,
+            "min": 0.0,
+            "max": 1000.0,
+            "step": 0.01
+          }
+        ],
+        "end_second": [
+          "FLOAT",
+          {
+            "tooltip": "End time in seconds of the timeline generation.",
+            "default": 5.0,
+            "min": 0.0,
+            "max": 1000.0,
+            "step": 0.01
+          }
+        ],
+        "duration_seconds": [
+          "FLOAT",
+          {
+            "tooltip": "Total timeline duration in seconds (computed/synced from frames).",
+            "default": 5.0,
+            "min": 0.1,
+            "max": 1000.0,
+            "step": 0.01
+          }
+        ],
+        "start_frame": [
+          "INT",
+          {
+            "tooltip": "Start frame of the timeline generation.",
+            "default": 0,
+            "min": 0,
+            "max": 10000,
+            "step": 1
+          }
+        ],
+        "end_frame": [
+          "INT",
+          {
+            "tooltip": "End frame of the timeline generation.",
+            "default": 120,
+            "min": 1,
+            "max": 10000,
+            "step": 1
+          }
+        ],
+        "duration_frames": [
+          "INT",
+          {
+            "tooltip": "Total timeline length in pixel-space frames. Used by the editor for visual scale only.",
+            "default": 120,
+            "min": 1,
+            "max": 10000,
+            "step": 1
+          }
+        ],
+        "timeline_data": [
+          "STRING",
+          {
+            "tooltip": "JSON state of the timeline editor (auto-managed; do not edit by hand).",
+            "default": "",
+            "multiline": false
+          }
+        ],
+        "local_prompts": [
+          "STRING",
+          {
+            "tooltip": "Auto-populated from the timeline editor.",
+            "default": "",
+            "multiline": true
+          }
+        ],
+        "segment_lengths": [
+          "STRING",
+          {
+            "tooltip": "Auto-populated from the timeline editor (pixel-space frame counts).",
+            "default": "",
+            "multiline": false
+          }
+        ],
+        "epsilon": [
+          "FLOAT",
+          {
+            "tooltip": "Penalty decay parameter. Values below ~0.1 all produce sharp boundaries (paper default 0.001). For softer transitions, try 0.5 or higher.",
+            "default": 0.001,
+            "min": 0.0001,
+            "max": 0.99,
+            "step": 0.0001
+          }
+        ],
+        "guide_strength": [
+          "STRING",
+          {
+            "tooltip": "Auto-populated from the timeline editor (comma-separated guide strengths for image segments).",
+            "default": "",
+            "multiline": false
+          }
+        ]
+      },
+      "optional": {
+        "audio_vae": [
+          "VAE",
+          {
+            "tooltip": "Optional. Connect an Audio VAE to generate audio latents."
+          }
+        ],
+        "optional_latent": [
+          "LATENT",
+          {
+            "tooltip": "Optional. Connect a latent to override the auto-generated one."
+          }
+        ],
+        "global_prompt": [
+          "STRING",
+          {
+            "tooltip": "Conditions the entire video. Anchors persistent characters, objects, and scene context.",
+            "default": "",
+            "forceInput": true,
+            "multiline": true
+          }
+        ],
+        "use_custom_audio": [
+          "BOOLEAN",
+          {
+            "tooltip": "Toggle between using timeline audio (ON) and generating audio from scratch (OFF).",
+            "default": false
+          }
+        ],
+        "use_custom_motion": [
+          "BOOLEAN",
+          {
+            "tooltip": "Toggle between using timeline motion guidance (ON) and ignoring motion video segments (OFF).",
+            "default": true
+          }
+        ],
+        "inpaint_audio": [
+          "BOOLEAN",
+          {
+            "tooltip": "Toggle whether empty gaps in the audio track are inpainted with generated audio.",
+            "default": true
+          }
+        ],
+        "frame_rate": [
+          "FLOAT",
+          {
+            "tooltip": "Frames per second — only affects how time is displayed in the timeline editor when time_units is set to 'seconds'.",
+            "default": 24,
+            "min": 1,
+            "max": 240,
+            "step": 1
+          }
+        ],
+        "display_mode": [
+          "COMBO",
+          {
+            "tooltip": "Display the ruler, segment ranges, length input, and total in frames or seconds. Internal storage is always pixel-space frames.",
+            "default": "seconds",
+            "multiselect": false,
+            "options": [
+              "frames",
+              "seconds"
+            ]
+          }
+        ],
+        "custom_width": [
+          "INT",
+          {
+            "tooltip": "Target output width for all image segments. Set to 0 to use the original image width.",
+            "default": 0,
+            "min": 0,
+            "max": 8192,
+            "step": 1
+          }
+        ],
+        "custom_height": [
+          "INT",
+          {
+            "tooltip": "Target output height for all image segments. Set to 0 to use the original image height.",
+            "default": 0,
+            "min": 0,
+            "max": 8192,
+            "step": 1
+          }
+        ],
+        "resize_method": [
+          "COMBO",
+          {
+            "tooltip": "How to resize image segments to fit the target dimensions.",
+            "default": "maintain aspect ratio",
+            "multiselect": false,
+            "options": [
+              "maintain aspect ratio",
+              "stretch to fit",
+              "pad",
+              "pad green",
+              "crop"
+            ]
+          }
+        ],
+        "divisible_by": [
+          "INT",
+          {
+            "tooltip": "Snap the final output image dimensions to be divisible by this number (e.g. 32 for LTX).",
+            "default": 32,
+            "min": 1,
+            "max": 256,
+            "step": 1
+          }
+        ],
+        "img_compression": [
+          "INT",
+          {
+            "tooltip": "H.264 CRF compression to apply to each guide image. 0 = no compression, higher = more artefacts.",
+            "default": 18,
+            "min": 0,
+            "max": 100,
+            "step": 1
+          }
+        ],
+        "override_audio": [
+          "BOOLEAN",
+          {
+            "tooltip": "Use the audio from the IC-LoRA video instead of using the audio track.",
+            "default": false
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "model",
+        "clip",
+        "start_second",
+        "end_second",
+        "duration_seconds",
+        "start_frame",
+        "end_frame",
+        "duration_frames",
+        "timeline_data",
+        "local_prompts",
+        "segment_lengths",
+        "epsilon",
+        "guide_strength"
+      ],
+      "optional": [
+        "audio_vae",
+        "optional_latent",
+        "global_prompt",
+        "use_custom_audio",
+        "use_custom_motion",
+        "inpaint_audio",
+        "frame_rate",
+        "display_mode",
+        "custom_width",
+        "custom_height",
+        "resize_method",
+        "divisible_by",
+        "img_compression",
+        "override_audio"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "MODEL",
+      "CONDITIONING",
+      "LATENT",
+      "LATENT",
+      "GUIDE_DATA",
+      "MOTION_GUIDE_DATA",
+      "FLOAT",
+      "AUDIO"
+    ],
+    "output_is_list": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "output_name": [
+      "model",
+      "positive",
+      "video_latent",
+      "audio_latent",
+      "guide_data",
+      "motion_guide_data",
+      "frame_rate",
+      "combined_audio"
+    ],
+    "output_tooltips": [
+      null,
+      null,
+      "Auto-generated LTXV empty latent (only populated when no latent is connected).",
+      "Auto-generated audio latent (uses custom audio if enabled).",
+      null,
+      null,
+      "The frame rate used for the timeline.",
+      "Combined timeline audio layout."
+    ],
+    "output_matchtypes": null,
+    "name": "LTXDirector",
+    "display_name": "LTX Director",
+    "description": "Same as Prompt Relay Encode, but local prompts and segment lengths are edited visually as draggable blocks on a timeline. The duration_frames input only sets the timeline scale (pixel space) — actual frame count is still read from the latent.",
+    "python_module": "custom_nodes.WhatDreamsCost-ComfyUI",
+    "category": "WhatDreamsCost",
+    "output_node": false,
+    "deprecated": false,
+    "experimental": false,
+    "dev_only": false,
+    "api_node": false,
+    "price_badge": null,
+    "search_aliases": null,
+    "essentials_category": null,
+    "has_intermediate_output": false
+  },
+  "LTXDirectorGuide": {
+    "input": {
+      "required": {
+        "positive": [
+          "CONDITIONING",
+          {
+            "tooltip": "Positive conditioning to add guide keyframe info to."
+          }
+        ],
+        "negative": [
+          "CONDITIONING",
+          {
+            "tooltip": "Negative conditioning to add guide keyframe info to."
+          }
+        ],
+        "vae": [
+          "VAE",
+          {
+            "tooltip": "Video VAE used to encode the guide images."
+          }
+        ],
+        "latent": [
+          "LATENT",
+          {
+            "tooltip": "Video latent — guides are inserted into this latent."
+          }
+        ],
+        "guide_data": [
+          "GUIDE_DATA",
+          {
+            "tooltip": "Guide data produced by Prompt Relay Encode (Timeline)."
+          }
+        ]
+      },
+      "optional": {
+        "motion_guide_data": [
+          "MOTION_GUIDE_DATA",
+          {
+            "tooltip": "Connect motion guide data from the timeline node to use IC-LoRA video guidance."
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "Connect model if using IC-LoRA for motion guidance."
+          }
+        ],
+        "ic_lora_name": [
+          [
+            "None",
+            "DR34ML4Y_I2V_14B_HIGH_V2.safetensors",
+            "DR34ML4Y_I2V_14B_LOW_V2.safetensors",
+            "Hyper-SDXL-8steps-CFG-lora.safetensors",
+            "LTX-2.3\\LTX-2.3-Licon-MSR-V1.safetensors",
+            "LTX-2.3\\LTX-2.3-Licon-MSR-V2.safetensors",
+            "LTX2.3_DMD_reshaped_r256.safetensors",
+            "Ltx2.3-Licon-VBVR-I2V-240K-R32.safetensors",
+            "NSFW-22-H-e8.safetensors",
+            "NSFW-22-L-e8.safetensors",
+            "Singularity LTX-2.3  OmniCine Preview v0.1.safetensors",
+            "Wan21_CausVid_14B_T2V_lora_rank32.safetensors",
+            "Wan21_CausVid_bidirect2_T2V_1_3B_lora_rank32.safetensors",
+            "Wan22_CumV2_High.safetensors",
+            "Wan22_CumV2_Low.safetensors",
+            "WanAnimate_relight_lora_fp16.safetensors",
+            "Wan_2_2_I2V_A14B_HIGH_lightx2v_MoE_distill_lora_rank_64_bf16.safetensors",
+            "bossWang.safetensors",
+            "childrens_illustrations_style_flux.safetensors",
+            "dongshizhang.safetensors",
+            "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
+            "low_noise_model_rank64.safetensors",
+            "ltx-2.3-22b-distilled-lora-1.1_fro90_ceil72_condsafe.safetensors",
+            "ltx-2.3-22b-distilled-lora-384-1.1.safetensors",
+            "ltx-2.3-22b-distilled-lora-384.safetensors",
+            "ltx2.3-transition.safetensors",
+            "ltxv\\editanything\\edit_anything_reference_v0.1_r128_ref_adaln_proj-role_embedding-ref_attn-ref_visual_proj.module.safetensors",
+            "ltxv\\editanything\\edit_anything_reference_v0.1_r128_ref_adaln_proj-role_embedding-ref_attn-ref_visual_proj.standard.safetensors",
+            "ltxv\\ltx2\\ltx-2.3-22b-ic-lora-ingredients-0.9.safetensors",
+            "ltxv\\ltx2\\ltx-2.3-22b-ic-lora-lipdub-0.9.safetensors",
+            "ltxv\\ltx2\\ltx-2.3-22b-ic-lora-motion-track-control-ref0.5.safetensors",
+            "ltxv\\ltx2\\ltx-2.3-22b-ic-lora-motiondeblur.safetensors",
+            "ltxv\\ltx2\\ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors",
+            "ltxv\\ltx2\\ltx23_edit_anything_global_rank128_v1_9000steps_adamw.safetensors",
+            "uso-flux1-dit-lora-v1.safetensors",
+            "wan2.1_SCAIL_2_DPO_lora_bf16.safetensors",
+            "wan2.2 lora\\wan2.2_t2v_A14b_high_noise_lora_rank64_lightx2v_4step_1217.safetensors",
+            "wan2.2 lora\\wan2.2_t2v_A14b_low_noise_lora_rank64_lightx2v_4step_1217.safetensors",
+            "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors",
+            "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+            "wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors",
+            "wan2.2_t2v_lightx2v_4steps_lora_v1.1_low_noise.safetensors",
+            "wan2210StepsT2VI2VFP8GGUF_fp8I2vhighnoise.safetensors",
+            "wan2210StepsT2VI2VFP8GGUF_fp8I2vlownoise.safetensors",
+            "wan_2.2_i2v_highnoise_selfslap_v1.0.safetensors"
+          ],
+          {
+            "default": "None",
+            "tooltip": "Select the IC-LoRA model to use for motion guidance."
+          }
+        ],
+        "ic_lora_strength": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": -100.0,
+            "max": 100.0,
+            "step": 0.01
+          }
+        ],
+        "scale_by": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.01,
+            "max": 8.0,
+            "step": 0.01,
+            "tooltip": "Scale the latent by this factor."
+          }
+        ],
+        "upscale_method": [
+          [
+            "nearest-exact",
+            "bilinear",
+            "area",
+            "bicubic",
+            "bislerp"
+          ],
+          {
+            "default": "bicubic",
+            "tooltip": "Method used to upscale/downscale the latent."
+          }
+        ],
+        "image_attention_strength": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01
+          }
+        ],
+        "crop": [
+          [
+            "disabled",
+            "center"
+          ],
+          {
+            "default": "center"
+          }
+        ],
+        "auto_snap_ic_grid": [
+          "BOOLEAN",
+          {
+            "default": true
+          }
+        ],
+        "use_tiled_encode": [
+          "BOOLEAN",
+          {
+            "default": false
+          }
+        ],
+        "tile_size": [
+          "INT",
+          {
+            "default": 256,
+            "min": 64,
+            "max": 512,
+            "step": 32
+          }
+        ],
+        "tile_overlap": [
+          "INT",
+          {
+            "default": 64,
+            "min": 16,
+            "max": 256,
+            "step": 16
+          }
+        ],
+        "retake_mode": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "tooltip": "Force Retake Mode. If false, it will still auto-detect Retake Mode from the timeline data."
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "positive",
+        "negative",
+        "vae",
+        "latent",
+        "guide_data"
+      ],
+      "optional": [
+        "motion_guide_data",
+        "model",
+        "ic_lora_name",
+        "ic_lora_strength",
+        "scale_by",
+        "upscale_method",
+        "image_attention_strength",
+        "crop",
+        "auto_snap_ic_grid",
+        "use_tiled_encode",
+        "tile_size",
+        "tile_overlap",
+        "retake_mode"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "CONDITIONING",
+      "CONDITIONING",
+      "LATENT",
+      "MODEL",
+      "FLOAT"
+    ],
+    "output_is_list": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "output_name": [
+      "positive",
+      "negative",
+      "latent",
+      "model",
+      "latent_downscale_factor"
+    ],
+    "name": "LTXDirectorGuide",
+    "display_name": "LTX Director Guide",
+    "description": "",
+    "python_module": "custom_nodes.WhatDreamsCost-ComfyUI",
+    "category": "sd",
+    "output_node": false,
+    "has_intermediate_output": false,
+    "search_aliases": []
+  },
+  "CLIPLoader": {
+    "input": {
+      "required": {
+        "clip_name": [
+          [
+            "ComfyUI-WAN\\umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+            "byt5_small_glyphxl_fp16.safetensors",
+            "clip_l.safetensors",
+            "gemma-3-12b-it-ablit-norms-biproj-fp8mixed.safetensors",
+            "gemma-3-12b-it-qat-q4_0-unquantized\\model.safetensors",
+            "gemma_3_12B_it_fp4_mixed.safetensors",
+            "ltx-2.3_text_projection_bf16.safetensors",
+            "model.safetensors",
+            "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+            "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+            "t5-base.safetensors",
+            "t5_base.safetensors",
+            "t5xxl_fp16.safetensors",
+            "t5xxl_fp8_e4m3fn_scaled.safetensors",
+            "umt5_xxl_fp16.safetensors",
+            "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+          ]
+        ],
+        "type": [
+          [
+            "stable_diffusion",
+            "stable_cascade",
+            "sd3",
+            "stable_audio",
+            "mochi",
+            "ltxv",
+            "pixart",
+            "cosmos",
+            "lumina2",
+            "wan",
+            "hidream",
+            "chroma",
+            "ace",
+            "omnigen2",
+            "qwen_image",
+            "hunyuan_image",
+            "flux2",
+            "ovis",
+            "longcat_image",
+            "cogvideox",
+            "lens",
+            "pixeldit",
+            "ideogram4",
+            "boogu",
+            "krea2",
+            "joyimage",
+            "mage",
+            "minimax"
+          ]
+        ]
+      },
+      "optional": {
+        "device": [
+          [
+            "default",
+            "cpu"
+          ],
+          {
+            "advanced": true
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "clip_name",
+        "type"
+      ],
+      "optional": [
+        "device"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "CLIP"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_name": [
+      "CLIP"
+    ],
+    "name": "CLIPLoader",
+    "display_name": "Load CLIP",
+    "description": "Recipes:\nsd: clip-l\nstable cascade: clip-g\nsd3: t5 xxl / clip-g / clip-l\nstable audio: t5 base\nmochi: t5 xxl\ncogvideox: t5 xxl (226-token padding)\ncosmos: old t5 xxl\nlumina2: gemma 2 2B\nwan: umt5 xxl\nhidream: llama-3.1 (Recommend) or t5\nomnigen2: qwen vl 2.5 3B\njoyimage: qwen3-vl 8B\nlens: gpt-oss-20b\npixeldit: gemma 2 2B elm",
+    "python_module": "nodes",
+    "category": "model/loaders",
+    "output_node": false,
+    "has_intermediate_output": false,
+    "search_aliases": []
+  }
+}
