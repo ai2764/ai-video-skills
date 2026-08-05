@@ -1,0 +1,7 @@
+interface:
+  display_name: "Director Storyboard"
+  short_description: "Script + keyframes into an LTX Director timeline, then run it"
+  default_prompt: "Use $director-storyboard to turn this script and these keyframes into a Director run."
+
+policy:
+  allow_implicit_invocation: true

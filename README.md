@@ -12,6 +12,7 @@ overwriting each other's inputs. The traps sections are the log of those.
 
 | Skill | Use when |
 |---|---|
+| [director-storyboard](skills/director-storyboard/SKILL.md) | A script plus keyframes needs to become one LTX Director timeline — ordering frames, writing global and per-segment prompts, bridging keyframes, and running it |
 | [slowmo-redraw-repair](skills/slowmo-redraw-repair/SKILL.md) | A fast-motion span has collapsed into mush — limbs, weapons or faces falling apart while running, fighting or whip-panning |
 
 ## Layout
@@ -52,10 +53,24 @@ stack: read a job, run a generation, fetch a result. Everything else — frame
 analysis, speed restoration, stitching — is `ffmpeg`/`ffprobe` and works
 anywhere.
 
-Each skill ships the contract plus at least one adapter. A Camera Lab + ComfyUI
-(LTX) adapter is included. To support another stack, write an adapter covering
-the contract's operations plus that stack's path restrictions, prompt-syntax
+Each skill ships the contract plus at least one adapter. Adapters for ComfyUI on
+its own and for Camera Lab + ComfyUI (LTX) are included — **ComfyUI alone is
+enough**; Camera Lab is used when present because its staging and audio handling
+are already tuned. To support another stack, write an adapter covering the
+contract's operations plus that stack's path restrictions, prompt-syntax
 restrictions and concurrency caveats.
+
+Adapter equivalence is not assumed. `director-storyboard` pins it with a golden
+`api_prompt.json` captured from a real Camera Lab run: the graph the ComfyUI
+adapter builds must match it exactly.
+
+## Tests
+
+```bash
+py -3 -m pytest
+```
+
+Requires `pytest` and, for the thumbnail tests, `ffmpeg`/`ffprobe` on PATH.
 
 ## Adding a skill
 
