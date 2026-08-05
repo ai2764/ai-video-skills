@@ -1077,7 +1077,15 @@ git commit -m "docs: document routing, H3 prompting and both H3 adapters"
 Insert between the current "emit storyboard JSON" step and the run step:
 
 - Probe backends first (`scripts/probe_backends.py`).
-- Read the keyframes pairwise and mark segments with fast camera movement. **This judgement is the agent's, not the script's** — `fast_camera` is an input to routing, not an output of it.
+- Build one side-by-side sheet per adjacent keyframe pair, then read those sheets — never the originals:
+
+```bash
+py -3 scripts/thumbnails.py <all keyframes in order> --dest <tmp>/pairs --mode pairs
+```
+
+  An N-keyframe storyboard becomes N-1 reads instead of 2(N-1), and the two frames sit in one image where displacement and angle change are directly comparable.
+
+- From each sheet, mark whether that segment has fast camera movement. **This judgement is the agent's, not the script's** — `fast_camera` is an input to routing, not an output of it.
 - Apply the four rules from `references/routing.md`.
 - If both H3 backends are available, ask the user local or API, and state the Applicable Territory exclusion when they pick local.
 - Print the cost estimate and wait for confirmation before submitting.
@@ -1133,6 +1141,7 @@ git commit -m "docs: route across LTX and H3 in both skill variants"
 |---|---|
 | 路由表 (3×3, two empty cells) | 2, 7 step 1 |
 | 路由规则 1–4 | 2 (tests pin each rule) |
+| 快运镜判读走并排缩略图（Round 1 Task 7 的 `pair_sheet`） | 8 step 1 |
 | 后端契约 — 探测/提交/取结果 | 3, 4, 5, 6 |
 | Adapter: MiniMax H3 API | 3, 7 step 4 |
 | Adapter: H3 本地 | 4, 7 step 3 |

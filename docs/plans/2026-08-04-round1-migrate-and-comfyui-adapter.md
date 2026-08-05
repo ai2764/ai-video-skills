@@ -39,6 +39,7 @@ skills/director-storyboard/
     director_timeline.py            storyboard JSON -> LTXDirector inputs
     comfy_backend.py                fill graph + submit + fetch
     probe_backends.py               which routing cells are available
+    thumbnails.py                   downscale / pair keyframes before the agent reads them
 codex/director-storyboard/
   SKILL.md
   agents/openai.yaml
@@ -51,10 +52,11 @@ tests/
   test_director_timeline.py
   test_comfy_client.py
   test_probe_backends.py
+  test_thumbnails.py
 pyproject.toml                      pytest config only
 ```
 
-Responsibility split: `comfy_client.py` knows HTTP and nothing about Director. `director_timeline.py` is pure data transformation with no I/O — that is what makes it cheaply testable against the golden fixture. `comfy_backend.py` joins the two. `probe_backends.py` only reads capability, never submits.
+Responsibility split: `comfy_client.py` knows HTTP and nothing about Director. `director_timeline.py` is pure data transformation with no I/O — that is what makes it cheaply testable against the golden fixture. `comfy_backend.py` joins the two. `probe_backends.py` only reads capability, never submits. `thumbnails.py` touches no backend at all — it exists purely to keep keyframe reads cheap for the agent.
 
 ---
 
@@ -984,12 +986,274 @@ git commit -m "feat: fill and submit the Director graph directly to ComfyUI"
 
 ---
 
-### Task 7: End-to-end check against a real ComfyUI
+### Task 7: `thumbnails.py` — make keyframe reads cheap
+
+Every full-resolution keyframe read costs roughly 1.5k tokens and stays in context for the rest of the session. This task makes the agent read downscaled images instead, and read *pairs* as a single side-by-side sheet — which is also the cheapest way to judge camera movement between adjacent frames (Round 2's routing rule 2 depends on it).
+
+**Files:**
+- Create: `skills/director-storyboard/scripts/thumbnails.py`
+- Test: `tests/test_thumbnails.py`
+
+**Interfaces:**
+- Consumes: `ffmpeg` on PATH.
+- Produces:
+  - `thumbnail(src: Path, dest_dir: Path, long_edge: int = 512) -> Path`
+  - `pair_sheet(first: Path, second: Path, dest_dir: Path, long_edge: int = 512) -> Path` — the two frames side by side in one PNG
+  - `contact_sheet(paths: list[Path], dest_dir: Path, columns: int = 4, long_edge: int = 320) -> Path`
+  - `main(argv) -> int` — CLI
+
+- [ ] **Step 1: Write the failing test**
+
+Create `tests/test_thumbnails.py`:
+
+```python
+import shutil
+import subprocess
+
+import pytest
+
+from thumbnails import contact_sheet, pair_sheet, thumbnail
+
+pytestmark = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
+
+
+def _probe(path):
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    width, height = (int(value) for value in out.split(","))
+    return width, height
+
+
+@pytest.fixture
+def source_images(tmp_path):
+    paths = []
+    for index, color in enumerate(("red", "blue", "green")):
+        path = tmp_path / f"src{index}.png"
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c={color}:s=1344x768", "-frames:v", "1", str(path)],
+            check=True, capture_output=True,
+        )
+        paths.append(path)
+    return paths
+
+
+def test_thumbnail_shrinks_to_long_edge(source_images, tmp_path):
+    out = thumbnail(source_images[0], tmp_path / "thumbs", long_edge=512)
+    assert out.exists()
+    width, height = _probe(out)
+    assert max(width, height) == 512
+
+
+def test_thumbnail_preserves_aspect_ratio(source_images, tmp_path):
+    out = thumbnail(source_images[0], tmp_path / "thumbs", long_edge=512)
+    width, height = _probe(out)
+    assert abs(width / height - 1344 / 768) < 0.02
+
+
+def test_pair_sheet_is_two_frames_wide(source_images, tmp_path):
+    out = pair_sheet(source_images[0], source_images[1], tmp_path / "pairs", long_edge=512)
+    width, height = _probe(out)
+    assert width == 1024
+    assert max(width, height) == 1024
+
+
+def test_pair_sheet_names_carry_both_sources(source_images, tmp_path):
+    out = pair_sheet(source_images[0], source_images[1], tmp_path / "pairs")
+    assert "src0" in out.name and "src1" in out.name
+
+
+def test_contact_sheet_tiles_all_inputs(source_images, tmp_path):
+    out = contact_sheet(source_images, tmp_path / "sheets", columns=3, long_edge=320)
+    assert out.exists()
+    width, _ = _probe(out)
+    assert width == 960
+
+
+def test_missing_source_raises(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        thumbnail(tmp_path / "nope.png", tmp_path / "thumbs")
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `py -3 -m pytest tests/test_thumbnails.py -v`
+Expected: FAIL with `ModuleNotFoundError: No module named 'thumbnails'`
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `skills/director-storyboard/scripts/thumbnails.py`:
+
+```python
+#!/usr/bin/env python3
+"""Downscale keyframes before the agent reads them.
+
+A full-resolution keyframe read costs ~1.5k tokens and stays in context for the
+rest of the session. Reading a 512px thumbnail instead costs a fraction of that
+and loses nothing that matters for composition, blocking or camera movement --
+the things storyboard decisions actually turn on. Open the original only when a
+decision depends on fine detail (legible on-screen text, facial expression).
+
+`pair_sheet` puts two adjacent keyframes side by side in one image, so judging
+the camera move between them is a single read instead of two.
+"""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+LONG_EDGE_DEFAULT = 512
+CONTACT_LONG_EDGE_DEFAULT = 320
+
+
+def _run(args: list[str]) -> None:
+    subprocess.run(args, check=True, capture_output=True)
+
+
+def _scale_filter(long_edge: int) -> str:
+    # Scale the longer side to long_edge, keep aspect, force even dimensions.
+    return (
+        f"scale='if(gt(iw,ih),{long_edge},-2)':'if(gt(iw,ih),-2,{long_edge})'"
+    )
+
+
+def thumbnail(src: Path, dest_dir: Path, long_edge: int = LONG_EDGE_DEFAULT) -> Path:
+    src = Path(src)
+    if not src.exists():
+        raise FileNotFoundError(f"keyframe does not exist: {src}")
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out = dest_dir / f"{src.stem}_thumb.png"
+    _run(["ffmpeg", "-y", "-i", str(src), "-vf", _scale_filter(long_edge), "-frames:v", "1", str(out)])
+    return out
+
+
+def pair_sheet(
+    first: Path,
+    second: Path,
+    dest_dir: Path,
+    long_edge: int = LONG_EDGE_DEFAULT,
+) -> Path:
+    first, second = Path(first), Path(second)
+    for path in (first, second):
+        if not path.exists():
+            raise FileNotFoundError(f"keyframe does not exist: {path}")
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out = dest_dir / f"{first.stem}__{second.stem}_pair.png"
+    scale = _scale_filter(long_edge)
+    _run([
+        "ffmpeg", "-y", "-i", str(first), "-i", str(second),
+        "-filter_complex", f"[0:v]{scale}[a];[1:v]{scale}[b];[a][b]hstack=inputs=2",
+        "-frames:v", "1", str(out),
+    ])
+    return out
+
+
+def contact_sheet(
+    paths: list[Path],
+    dest_dir: Path,
+    columns: int = 4,
+    long_edge: int = CONTACT_LONG_EDGE_DEFAULT,
+) -> Path:
+    paths = [Path(path) for path in paths]
+    for path in paths:
+        if not path.exists():
+            raise FileNotFoundError(f"keyframe does not exist: {path}")
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out = dest_dir / "contact_sheet.png"
+    inputs: list[str] = []
+    for path in paths:
+        inputs.extend(["-i", str(path)])
+    scale = _scale_filter(long_edge)
+    chains = "".join(f"[{i}:v]{scale}[s{i}];" for i in range(len(paths)))
+    labels = "".join(f"[s{i}]" for i in range(len(paths)))
+    rows = -(-len(paths) // columns)
+    filtergraph = f"{chains}{labels}xstack=inputs={len(paths)}:layout={_layout(len(paths), columns)}:fill=black"
+    _run(["ffmpeg", "-y", *inputs, "-filter_complex", filtergraph, "-frames:v", "1", str(out)])
+    return out
+
+
+def _layout(count: int, columns: int) -> str:
+    cells: list[str] = []
+    for index in range(count):
+        column = index % columns
+        row = index // columns
+        x = "0" if column == 0 else "+".join(f"w{i}" for i in range(column))
+        y = "0" if row == 0 else "+".join(f"h{i * columns}" for i in range(row))
+        cells.append(f"{x}_{y}")
+    return "|".join(cells)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("images", nargs="+", type=Path)
+    parser.add_argument("--dest", type=Path, required=True)
+    parser.add_argument("--long-edge", type=int, default=LONG_EDGE_DEFAULT)
+    parser.add_argument(
+        "--mode",
+        choices=("thumbs", "pairs", "contact"),
+        default="thumbs",
+        help="pairs makes one side-by-side sheet per adjacent pair",
+    )
+    args = parser.parse_args(argv)
+
+    if args.mode == "thumbs":
+        made = [thumbnail(path, args.dest, args.long_edge) for path in args.images]
+    elif args.mode == "pairs":
+        made = [
+            pair_sheet(a, b, args.dest, args.long_edge)
+            for a, b in zip(args.images, args.images[1:])
+        ]
+    else:
+        made = [contact_sheet(args.images, args.dest, long_edge=args.long_edge)]
+
+    for path in made:
+        print(path)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `py -3 -m pytest tests/test_thumbnails.py -v`
+Expected: PASS, 6 tests
+
+If `test_contact_sheet_tiles_all_inputs` fails on the `xstack` layout, simplify: drop `contact_sheet` to a single row (`hstack=inputs=N`) and adjust the test to match. `pair_sheet` is the one that actually matters for routing; the contact sheet is a convenience.
+
+- [ ] **Step 5: Check the token saving is real**
+
+```bash
+py -3 skills/director-storyboard/scripts/thumbnails.py <two real keyframes> --dest /tmp/th --mode pairs
+ls -l /tmp/th/
+```
+
+Expected: one PNG well under 400 KB. Compare against the originals — the pair sheet should be smaller than either source alone.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add skills/director-storyboard/scripts/thumbnails.py tests/test_thumbnails.py
+git commit -m "feat: downscale and pair keyframes to keep agent reads cheap"
+```
+
+---
+
+### Task 8: End-to-end check against a real ComfyUI
 
 No new code. This is the gate that proves the adapter actually equals Camera Lab.
 
 **Files:**
-- Modify: none (findings go into `references/backend-comfyui.md` in Task 8)
+- Modify: none (findings go into `references/backend-comfyui.md` in Task 9)
 
 - [ ] **Step 1: Dry-run the golden storyboard**
 
@@ -1016,11 +1280,11 @@ Expected: both first frames bind to the same keyframe. They will not be pixel-id
 
 - [ ] **Step 4: Record what you found**
 
-Write the observed `prompt_id`, output path, and any discrepancy into a scratch note; Task 8 folds it into the adapter reference. Do not commit the videos.
+Write the observed `prompt_id`, output path, and any discrepancy into a scratch note; Task 9 folds it into the adapter reference. Do not commit the videos.
 
 ---
 
-### Task 8: Write SKILL.md and the reference set
+### Task 9: Write SKILL.md and the reference set
 
 **Files:**
 - Create: `skills/director-storyboard/SKILL.md`
@@ -1032,7 +1296,7 @@ Write the observed `prompt_id`, output path, and any discrepancy into a scratch 
 - Copy: `skills/director-storyboard/references/example_storyboard.json`
 
 **Interfaces:**
-- Consumes: the scripts from Tasks 3–6, findings from Task 7.
+- Consumes: the scripts from Tasks 3–7, findings from Task 8.
 - Produces: the skill itself.
 
 - [ ] **Step 1: Copy the three unchanged references**
@@ -1099,6 +1363,26 @@ Start from the old one (`C:/Users/AIBOX/dev/camera-lab/.claude/skills/director-s
 3. Replace Step 6 ("Run the workflow") with: probe backends first, pick an adapter, then submit. Point at `scripts/probe_backends.py` and the two adapter references rather than hardcoding Camera Lab.
 4. Move the resolution-snapping paragraph (old lines 113–133) into the adapter references; leave a one-line pointer in `SKILL.md`.
 5. Delete the "Camera Lab server running" prerequisite; replace with "ComfyUI running, Camera Lab optional".
+6. In "Read images selectively — do not open the whole set" (old lines 47–63), keep the existing selectivity rules and add a downscaling rule above them:
+
+```markdown
+**Always read thumbnails, never the originals.** Before opening any keyframe,
+run it through `scripts/thumbnails.py`:
+
+    py -3 scripts/thumbnails.py <images...> --dest <tmp>/thumbs
+
+A 512px thumbnail carries everything storyboard decisions turn on — composition,
+blocking, shot scale, wardrobe, palette — at a fraction of the token cost. Open
+an original only when a decision depends on fine detail the thumbnail cannot
+settle: legible on-screen text, a facial micro-expression, a small prop.
+
+To compare two adjacent keyframes, make one side-by-side sheet rather than
+opening both:
+
+    py -3 scripts/thumbnails.py a.png b.png --dest <tmp>/pairs --mode pairs
+
+Selectivity still applies on top of this — a cheap read is not a free read.
+```
 
 - [ ] **Step 6: Verify the skill has no stale Camera Lab requirement**
 
@@ -1119,7 +1403,7 @@ git commit -m "docs: write director-storyboard skill against the backend contrac
 
 ---
 
-### Task 9: Codex variant, README, and retire the old copies
+### Task 10: Codex variant, README, and retire the old copies
 
 **Files:**
 - Create: `codex/director-storyboard/SKILL.md`
@@ -1164,7 +1448,7 @@ git commit -m "docs: add Codex variant of director-storyboard and list it"
 
 - [ ] **Step 6: Retire the old copies in camera-lab**
 
-Only after the end-to-end check in Task 7 passed. In the camera-lab repo:
+Only after the end-to-end check in Task 8 passed. In the camera-lab repo:
 
 ```bash
 git rm -r .codex/skills/director-storyboard .grok/skills/director-storyboard
@@ -1192,17 +1476,18 @@ Expected: `Junction created`. Confirm the skill loads by invoking `/director-sto
 
 | Spec section | Task |
 |---|---|
-| 仓库形态 (repo layout) | 1, 8, 9 |
+| 仓库形态 (repo layout) | 1, 9, 10 |
 | ComfyUI 直连 adapter — 探测 | 5 |
 | ComfyUI 直连 adapter — 提交 (segments array) | 3, 6 |
 | ComfyUI 直连 adapter — 取结果 | 4 (`outputs`), 6 |
-| ComfyUI adapter 注意事项 (upload, node-id max, autogrow) | 8 step 3 |
-| Camera Lab adapter | 8 step 4 |
-| 路由表 LTX 列 | 5 (probe), 8 |
-| 验证 — probe on three machine types | 5 step 5, 9 |
-| 验证 — ComfyUI 直连对比 Camera Lab 首尾帧 | 7 |
-| 验证 — 两个变体同步 | 9 step 2 |
-| 迁移后删除旧目录 | 9 step 6 |
+| ComfyUI adapter 注意事项 (upload, node-id max, autogrow) | 9 step 3 |
+| Camera Lab adapter | 9 step 4 |
+| 路由表 LTX 列 | 5 (probe), 9 |
+| 读图省 token（缩略图 / 并排对比） | 7, 9 step 5 item 6 |
+| 验证 — probe on three machine types | 5 step 5, 10 |
+| 验证 — ComfyUI 直连对比 Camera Lab 首尾帧 | 8 |
+| 验证 — 两个变体同步 | 10 step 2 |
+| 迁移后删除旧目录 | 10 step 6 |
 
 Deferred to Round 2 by design: routing rules, H3 local, H3 API, cost reporting, `prompting-h3.md`, `run_storyboard.py` unified CLI.
 
