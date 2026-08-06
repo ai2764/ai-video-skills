@@ -80,6 +80,34 @@ seconds**.
 Model loading is nearly free (cold 9.7 min vs warm 9.6), so restarting ComfyUI
 between jobs is cheap.
 
+## Reference images: measured behaviour
+
+`MiniMaxH3ReferenceToVideo` with no first/last frame — composition comes purely
+from the refs and the prompt.
+
+**Design sheets are safer than expected.** Eight refs including sheets covered in
+Chinese annotation, callout lines, spec tables and threat-rating bars produced a
+clean frame: no text, no layout artifacts, and no aircraft even though an
+aircraft sheet was among the refs. Telling the model in the prompt to *take
+their shapes, materials and colours and ignore their layout* appears to be
+enough. Cropping the hero art out of a sheet is still better where it is easy.
+
+**Ref count costs time, roughly linearly.** Same shot, same steps:
+
+| Refs | Frames | Time |
+|---|---|---|
+| 3 | 192 | 11 min |
+| 8 | 243 | 20.5 min |
+
+**A ref cannot add detail the framing has no room for.** A full-body character
+ref does nothing for a subject who is forty pixels tall in a wide shot — refs
+are never upscaled, and there are no pixels to carry the detail. If identity
+must read, change the shot size; no ref will rescue a silhouette.
+
+**Prefer flf when you have two keyframes.** ref2v has to invent the composition;
+first/last frames pin it. A corridor shot with both frames given ran in 7.5
+minutes with no refs at all and bound both ends exactly.
+
 ## Stability
 
 ComfyUI has died after H3 runs. Probe before each submit rather than assuming

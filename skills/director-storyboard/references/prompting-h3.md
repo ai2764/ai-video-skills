@@ -58,7 +58,54 @@ No `strength`. No retake. No negative prompt.
 If a shot needs several timed events, or needs one span re-rolled while the rest
 stays, it belongs on LTX Director, not H3.
 
-## Sound
+## One prompt holds one running instruction
+
+Observed across two takes of the same shot, same refs, same seed:
+
+| Prompt asked for | What came out |
+|---|---|
+| camera pulls back **and** a ridge chases her | pull-back happened; the ridge read as static terrain |
+| pack closes on her **and** camera pulls back | chase was perfect; the camera never pulled back |
+
+Two instructions that both have to run for the whole shot, and H3 keeps one.
+This follows from having no time index: it cannot allocate "camera does this
+throughout while that also happens throughout."
+
+**Decide which one the shot is actually about and write only that.** If you
+genuinely need both, the camera move belongs to LTX Director, or you anchor the
+framing change with a `last_frame` instead of describing it.
+
+Staged actions in sequence are different and do work — see below.
+
+## Write pursuit as closing distance, not as a direction
+
+The single highest-value fix found so far.
+
+- ✗ `Behind her a ridge of earth ploughs forward, chasing her line` — the model
+  rendered a furrow in the ground. A position word describes *where a thing is*,
+  which is a property of terrain.
+- ✓ `The gap between them and her shrinks from shot to shot: they start far back
+  on the slope, then they are on the flat behind her, then the leading one is
+  close enough that its shadow reaches her heels, and it keeps closing`
+
+Give a quantity that changes across named waypoints. The same trick works for
+anything relational: looming, receding, closing in, falling behind.
+
+## Sequenced actions work; their timing does not
+
+`Then the mound bursts open and the creatures tear out of the soil` landed at
+about 6.7 s of a 10 s shot — correct order, good placement, **not controllable**.
+`then` is a hint about ordering that the model resolves however it likes.
+
+So: stage two beats if you must, but never promise a cue point. If a beat has to
+land on a specific frame, that is a `last_frame` anchor or two separate shots.
+
+## Screen-space directions are understood
+
+`a mound swells up at the very bottom edge of the frame, close to the camera,
+and ploughs up the screen away from us and toward her` produced exactly that.
+Frame-relative language (bottom edge, up the screen, toward camera) is read
+reliably — use it instead of world-relative language when composition matters.
 
 H3 generates native stereo audio, and the voice is encoded fresh per clip — a
 character's voice changes between shots. Write sound cues if you want them, but
