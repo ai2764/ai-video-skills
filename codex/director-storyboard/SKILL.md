@@ -104,6 +104,7 @@ history and output directory before resubmitting.
 - `references/prompting.md` when composing, comparing, or repairing prompts,
   timing, strengths, or anti-slideshow motion.
 - `references/backend-contract.md` before touching any backend.
+- `references/operations.md` when submitting, extending, retaking or troubleshooting.
 - `references/routing.md` before deciding which model runs a segment.
 - `references/prompting-h3.md` for any segment routed to H3 — not `prompting.md`.
 - `references/backend-comfyui.md`, `references/backend-camera-lab.md`,

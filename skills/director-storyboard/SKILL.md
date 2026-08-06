@@ -430,6 +430,7 @@ Load only what the task needs — do not read all of these by default.
 - `references/routing.md` — the mode × backend table and the four rules
 - `references/storyboard.schema.json` — machine schema
 - `references/example_storyboard.json` — sample payload
+- `references/operations.md` — submitting, variants, retakes, extensions, troubleshooting
 - `references/backend-contract.md` — what the skill needs from a backend
 - `references/backend-comfyui.md` — ComfyUI direct adapter
 - `references/backend-camera-lab.md` — Camera Lab adapter
