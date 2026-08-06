@@ -34,6 +34,70 @@ def align_dimension(value: int) -> int:
     return aligned * 2
 
 
+def storyboard_to_timeline(storyboard: dict[str, Any], fps: int = 24) -> dict[str, Any]:
+    """Storyboard JSON (seconds) -> director timeline (frames).
+
+    The storyboard is what the skill writes and a human reads; the timeline is
+    what the graph wants. Segment durations are given in seconds and become
+    frame counts here, with start frames accumulated so guides land on segment
+    boundaries.
+    """
+    raw_segments = storyboard.get("segments") or []
+    if not raw_segments:
+        raise ValueError("storyboard needs at least one segment")
+
+    segments: list[dict[str, Any]] = []
+    prompts: list[str] = []
+    lengths: list[int] = []
+    cursor = 0
+
+    for index, segment in enumerate(raw_segments, start=1):
+        prompt = str(segment.get("prompt") or segment.get("local_prompt") or "")
+        if "|" in prompt:
+            raise ValueError(
+                f"segment {index} prompt contains '|', which LTXDirector uses to "
+                "split local prompts — remove it"
+            )
+        seconds = segment.get("duration")
+        if seconds is None:
+            seconds = segment.get("length_seconds")
+        frames = int(round(float(seconds or 0) * fps))
+        if frames <= 0:
+            raise ValueError(f"segment {index} has no duration")
+
+        image = str(segment.get("image") or segment.get("image_path") or "")
+        strength = segment.get("strength")
+        segments.append({
+            "id": segment.get("id") or f"segment-{index}",
+            "type": "image" if image else "text",
+            "duration": frames / float(fps),
+            "frames": frames,
+            "image_path": image,
+            "video_path": "",
+            "audio_path": "",
+            "guide_frame": cursor,
+            "start_frame": cursor,
+            "strength": 1.0 if strength in {None, ""} else float(strength),
+            "trimStart": 0,
+        })
+        prompts.append(prompt)
+        lengths.append(frames)
+        cursor += frames
+
+    return {
+        "global_prompt": storyboard.get("global_prompt") or "",
+        "local_prompts": "|".join(prompts),
+        "segment_lengths": ",".join(str(n) for n in lengths),
+        "duration_frames": cursor,
+        "duration_seconds": cursor / float(fps),
+        "fps": fps,
+        "segments": segments,
+        "audio_segments": [],
+        "motion_segments": [],
+        "retake_mode": False,
+    }
+
+
 def build_segments(timeline: dict[str, Any]) -> list[dict[str, Any]]:
     """One entry per timeline segment, without guide images attached yet."""
     segments: list[dict[str, Any]] = []

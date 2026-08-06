@@ -32,8 +32,18 @@ class ComfyClient:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8") or "{}")
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8") or "{}")
+        except urllib.error.HTTPError as error:
+            # ComfyUI rejects a bad graph with 400 and puts the whole diagnosis
+            # -- node_errors, per-input messages -- in the *body*. Letting the
+            # HTTPError propagate throws away the only useful part.
+            body = error.read().decode("utf-8", errors="replace")
+            try:
+                return json.loads(body or "{}")
+            except json.JSONDecodeError:
+                raise RuntimeError(f"HTTP {error.code} from {path}: {body[:800]}") from None
 
     def alive(self) -> bool:
         try:
@@ -89,10 +99,24 @@ class ComfyClient:
         result = self._post("/prompt", {"prompt": graph, "client_id": self.client_id})
         node_errors = result.get("node_errors") or {}
         if node_errors:
-            first = sorted(node_errors)[0]
+            details: list[str] = []
+            for node_id in sorted(node_errors):
+                entry = node_errors[node_id] or {}
+                node_type = (graph.get(node_id) or {}).get("class_type", "?")
+                for item in entry.get("errors") or [{}]:
+                    details.append(
+                        f"node {node_id} ({node_type}): "
+                        f"{item.get('type', '?')} — {item.get('message', '')} "
+                        f"{item.get('details', '')}".strip()
+                    )
             raise RuntimeError(
-                f"ComfyUI rejected the graph at node {first}: {result.get('error')}"
+                "ComfyUI rejected the graph:\n  " + "\n  ".join(details)
             )
+        error = result.get("error")
+        if error:
+            message = error.get("message") if isinstance(error, dict) else str(error)
+            details = error.get("details", "") if isinstance(error, dict) else ""
+            raise RuntimeError(f"ComfyUI rejected the graph: {message} {details}".strip())
         prompt_id = result.get("prompt_id")
         if not prompt_id:
             raise RuntimeError(f"ComfyUI returned no prompt_id: {result}")

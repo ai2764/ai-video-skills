@@ -51,6 +51,39 @@ def fill_director_graph(
     return filled
 
 
+def fill_missing_required(
+    graph: dict[str, Any],
+    object_info: dict[str, Any],
+) -> list[str]:
+    """Add required widget inputs the export dropped, using their declared defaults.
+
+    Converting a UI workflow to API format maps positional `widgets_values`
+    onto named inputs. Dynamic widget types (`COMFY_DYNAMICCOMBO_V3` and
+    friends) do not always survive that mapping, and the graph then fails
+    validation with `Required input is missing <name>` at submit time. Anything
+    with a declared default can simply be restored.
+
+    Mutates `graph`. Returns a list of `node/input` strings describing what was
+    added, so a caller can report it rather than silently patching.
+    """
+    added: list[str] = []
+    for node_id, node in graph.items():
+        spec = object_info.get(str(node.get("class_type"))) or {}
+        required = ((spec.get("input") or {}).get("required")) or {}
+        inputs = node.setdefault("inputs", {})
+        for name, declaration in required.items():
+            if name in inputs:
+                continue
+            if not (isinstance(declaration, list) and len(declaration) > 1):
+                continue
+            options = declaration[1]
+            if not isinstance(options, dict) or "default" not in options:
+                continue
+            inputs[name] = options["default"]
+            added.append(f"{node_id}({node.get('class_type')}).{name}")
+    return added
+
+
 def stage_images(client: ComfyClient, timeline: dict[str, Any]) -> dict[int, str]:
     """Upload each segment's guide image, keyed by 1-based segment index."""
     names: dict[int, str] = {}
@@ -86,6 +119,9 @@ def run_director(
 
     image_names = stage_images(client, timeline)
     filled = fill_director_graph(graph, timeline, image_names, width, height)
+    restored = fill_missing_required(filled, client.object_info())
+    if restored:
+        print(f"restored {len(restored)} dropped widget default(s): {', '.join(restored)}")
     prompt_id = client.submit(filled)
 
     deadline = time.time() + timeout_seconds

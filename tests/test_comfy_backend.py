@@ -103,3 +103,48 @@ def test_stage_images_skips_text_segments(timeline):
 
     local = {**timeline, "segments": [{"id": "t", "type": "text", "frames": 24, "image_path": ""}]}
     assert stage_images(FakeClient(), local) == {}
+
+
+def test_fill_missing_required_adds_declared_defaults():
+    from comfy_backend import fill_missing_required
+
+    graph = {"37": {"class_type": "SaveVideo", "inputs": {"video": ["2", 0], "format": "auto"}}}
+    info = {
+        "SaveVideo": {
+            "input": {
+                "required": {
+                    "video": ["VIDEO", {}],
+                    "format": ["COMBO", {"default": "auto"}],
+                    "codec": ["COMFY_DYNAMICCOMBO_V3", {"default": "auto"}],
+                }
+            }
+        }
+    }
+    added = fill_missing_required(graph, info)
+    assert graph["37"]["inputs"]["codec"] == "auto"
+    assert added == ["37(SaveVideo).codec"]
+
+
+def test_fill_missing_required_leaves_present_values_alone():
+    from comfy_backend import fill_missing_required
+
+    graph = {"1": {"class_type": "X", "inputs": {"a": "mine"}}}
+    info = {"X": {"input": {"required": {"a": ["STRING", {"default": "theirs"}]}}}}
+    assert fill_missing_required(graph, info) == []
+    assert graph["1"]["inputs"]["a"] == "mine"
+
+
+def test_fill_missing_required_skips_inputs_without_a_default():
+    from comfy_backend import fill_missing_required
+
+    graph = {"1": {"class_type": "X", "inputs": {}}}
+    info = {"X": {"input": {"required": {"link_in": ["IMAGE", {}]}}}}
+    assert fill_missing_required(graph, info) == []
+    assert graph["1"]["inputs"] == {}
+
+
+def test_fill_missing_required_ignores_unknown_node_types():
+    from comfy_backend import fill_missing_required
+
+    graph = {"1": {"class_type": "NotInObjectInfo", "inputs": {}}}
+    assert fill_missing_required(graph, {}) == []
