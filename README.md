@@ -12,7 +12,7 @@ overwriting each other's inputs. The traps sections are the log of those.
 
 | Skill | Use when |
 |---|---|
-| [director-storyboard](skills/director-storyboard/SKILL.md) | A script plus keyframes needs to become one LTX Director timeline — ordering frames, writing global and per-segment prompts, bridging keyframes, and running it |
+| [director-storyboard](skills/director-storyboard/SKILL.md) | A script plus keyframes needs to become a Director timeline — ordering frames, writing global and per-segment prompts, bridging keyframes, then routing each segment to LTX or MiniMax H3 and running it |
 | [slowmo-redraw-repair](skills/slowmo-redraw-repair/SKILL.md) | A fast-motion span has collapsed into mush — limbs, weapons or faces falling apart while running, fighting or whip-panning |
 
 ## Layout
@@ -62,7 +62,12 @@ restrictions and concurrency caveats.
 
 Adapter equivalence is not assumed. `director-storyboard` pins it with a golden
 `api_prompt.json` captured from a real Camera Lab run: the graph the ComfyUI
-adapter builds must match it exactly.
+adapter builds must match it exactly, and that has been verified end to end
+against a live ComfyUI.
+
+Where more than one *model* can run a shot, a routing layer decides per segment
+rather than per project — see `skills/director-storyboard/references/routing.md`.
+Backends that bill per second never run without an explicit confirmation.
 
 ## Tests
 

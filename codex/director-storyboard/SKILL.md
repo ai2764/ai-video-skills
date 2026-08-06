@@ -68,7 +68,7 @@ you assumed about them.
   a major pose plus camera transition.
 - **Never put `|` in a prompt.** LTXDirector splits local prompts on it.
 
-## Running
+## Routing and running
 
 Probe before asking the user anything:
 
@@ -76,9 +76,25 @@ Probe before asking the user anything:
 py -3 scripts/probe_backends.py
 ```
 
-It reports which modes are runnable and why the rest are not. Then read the
-adapter for whatever is available — Camera Lab when reachable (its staging and
-audio handling are already tuned), otherwise ComfyUI direct.
+Then route each segment across two models (`references/routing.md`):
+
+- Keyframe count picks the mode: 1 → i2v, 2 → flf, ≥3 → timeline.
+- Fast camera movement picks the model — those segments go to H3, the rest stay
+  on LTX. Decide **per segment**. Judge it from side-by-side pair sheets
+  (`--mode pairs` above); `fast_camera` is an input you set, not something the
+  script derives.
+- Under 4 seconds vetoes H3 regardless of camera movement.
+- H3 can never run timeline mode — first/last anchors only.
+
+For any segment routed to H3, read `references/prompting-h3.md` **instead of**
+`prompting.md`: H3 has no negative conditioning, no per-segment local prompts,
+no strength and no retake, and its encoder already sees the keyframe.
+
+If both H3 backends are available, ask local or API, and state the Community
+License territory exclusion (US / EU / UK / South Korea) when they pick local.
+The hosted API costs money — print the estimate and get a yes before submitting.
+
+`scripts/run_storyboard.py` does probe → route → cost → submit in one pass.
 
 A client-side timeout is not a failed generation. Check the backend's own job
 history and output directory before resubmitting.
@@ -88,7 +104,10 @@ history and output directory before resubmitting.
 - `references/prompting.md` when composing, comparing, or repairing prompts,
   timing, strengths, or anti-slideshow motion.
 - `references/backend-contract.md` before touching any backend.
-- `references/backend-comfyui.md` or `references/backend-camera-lab.md` for the
+- `references/routing.md` before deciding which model runs a segment.
+- `references/prompting-h3.md` for any segment routed to H3 — not `prompting.md`.
+- `references/backend-comfyui.md`, `references/backend-camera-lab.md`,
+  `references/backend-h3-local.md` or `references/backend-minimax-api.md` for the
   stack actually present.
 - `references/storyboard.schema.json` only when writing or validating JSON.
 - `references/example_storyboard.json` only when no existing storyboard

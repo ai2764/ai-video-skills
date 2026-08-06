@@ -48,6 +48,10 @@ ffprobe -v error -show_entries format=duration -of csv=p=0 clip.mp4
 
 - `backend-comfyui.md` — ComfyUI direct. Needs only ComfyUI.
 - `backend-camera-lab.md` — Camera Lab in front of ComfyUI. Preferred when present.
+- `backend-h3-local.md` — MiniMax H3 on your own GPU. Check the licence territory.
+- `backend-minimax-api.md` — MiniMax H3 hosted. Costs money per second.
+
+Which one runs a given segment is decided in `routing.md`.
 
 To add a backend, write an adapter covering the three operations above, plus
 that stack's path restrictions, prompt-syntax restrictions and concurrency

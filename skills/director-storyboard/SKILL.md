@@ -309,15 +309,55 @@ py -3 scripts/probe_backends.py
 It reports which cells are runnable and why the rest are not. Do not ask the
 user a question the probe has already answered.
 
+### Then route each segment
+
+Two models are available, and they are not interchangeable. Read
+`references/routing.md` for the table and the four rules. In short:
+
+- **Keyframe count picks the mode**: 1 → i2v, 2 → flf, ≥3 → timeline.
+- **Fast camera movement picks the model.** Segments whose adjacent keyframes
+  show large displacement or a big angle change go to H3, which holds structure
+  better through violent motion; everything else stays on LTX. Decide this
+  **per segment**, not per storyboard.
+- **Under 4 seconds vetoes H3** no matter how fast the camera moves.
+- **H3 can never run the timeline mode** — it takes first/last anchors only.
+
+To judge camera movement, build one side-by-side sheet per adjacent keyframe
+pair and read those (see the thumbnail rules above):
+
+```bash
+py -3 scripts/thumbnails.py <keyframes in order> --dest <tmp>/pairs --mode pairs
+```
+
+**This judgement is yours, not the script's.** `fast_camera` is an input to
+routing — set it on each segment before routing.
+
+If a segment routes to H3, read `references/prompting-h3.md` **instead of**
+`prompting.md`. The two prompt contracts are incompatible.
+
+If both H3 backends are available, ask the user local or API, and state the
+Community License territory exclusion (US / EU / UK / South Korea) when they
+pick local.
+
 ### Then pick an adapter
 
 | Situation | Adapter |
 |---|---|
-| Camera Lab reachable | `references/backend-camera-lab.md` — prefer it; its image staging, subtitle matte and audio handling are already tuned |
+| Camera Lab reachable | `references/backend-camera-lab.md` — prefer it for LTX; its image staging, subtitle matte and audio handling are already tuned |
 | Only ComfyUI | `references/backend-comfyui.md` — the skill fills and submits the graph itself |
+| H3 on this machine | `references/backend-h3-local.md` |
+| H3 hosted | `references/backend-minimax-api.md` — **costs money**; print the estimate and get confirmation before submitting |
 
-Both produce the same graph. That equivalence is pinned by a golden
-`api_prompt.json` captured from a real Camera Lab run; see the adapter notes.
+The two LTX adapters produce the same graph. That equivalence is pinned by a
+golden `api_prompt.json` captured from a real Camera Lab run and verified end to
+end against a live ComfyUI.
+
+`scripts/run_storyboard.py` does probe → route → cost → submit in one pass:
+
+```bash
+py -3 scripts/run_storyboard.py storyboard.json --dry-run
+py -3 scripts/run_storyboard.py storyboard.json --h3-backend api --yes
+```
 
 ### Report after submit
 
@@ -375,21 +415,32 @@ Hard-won limits:
 - Change identity mid-timeline without user intent
 - Commit generated videos, uploads, or `tasks/` outputs
 - Skip writing the JSON to disk when the user asked to run (runner needs a file or CLI args)
+- **Carry LTX prompt structure into an H3 segment.** No negative prompt, no
+  `|`-separated local prompts, no `strength`. H3 accepts none of them and will
+  encode the words as picture content instead of ignoring them.
+- **Submit to the hosted H3 API without showing the cost and getting a yes.**
 
 ## References
 
 Load only what the task needs — do not read all of these by default.
 
 - `references/prompting.md` — LTX Director prompting + keyframe bridging
+- `references/prompting-h3.md` — H3 prompting. A **different contract**; read
+  this instead of `prompting.md` for any segment routed to H3
+- `references/routing.md` — the mode × backend table and the four rules
 - `references/storyboard.schema.json` — machine schema
 - `references/example_storyboard.json` — sample payload
 - `references/backend-contract.md` — what the skill needs from a backend
 - `references/backend-comfyui.md` — ComfyUI direct adapter
 - `references/backend-camera-lab.md` — Camera Lab adapter
-- `workflows/ltx_director_2.api.json` — the graph this skill ships and fills
+- `references/backend-h3-local.md` — H3 on a local GPU (check licence territory)
+- `references/backend-minimax-api.md` — hosted H3 (costs money per second)
 
 Scripts:
 
+- `scripts/run_storyboard.py` — probe → route → cost → submit, in one pass
 - `scripts/probe_backends.py` — which cells this machine can run
 - `scripts/thumbnails.py` — cheap keyframe reads (thumbs / pairs / contact sheet)
 - `scripts/comfy_backend.py` — fill and submit the Director graph
+- `scripts/routing.py` — the four rules and the cost estimate
+- `scripts/h3_api.py` / `scripts/h3_local.py` — the two H3 backends
