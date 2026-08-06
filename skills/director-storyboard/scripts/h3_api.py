@@ -12,6 +12,7 @@ Region matters: `api.minimax.io` pairs with a platform.minimax.io key and
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import subprocess
@@ -28,6 +29,26 @@ VALID_RESOLUTIONS = ("768P", "2K")
 MODEL_ID = "MiniMax-H3"
 MAX_PROMPT_CHARS = 7000
 FRAME_ROLES = ("first_frame", "last_frame")
+
+
+def image_reference(source: str | Path) -> str:
+    """A value the API accepts for `image_url.url`.
+
+    An http(s) URL or an existing `data:` URI passes through. A local path is
+    inlined as a base64 data URI -- verified against the live API, which accepts
+    the payload (it reaches billing rather than failing validation). Keep an eye
+    on the 64 MB request ceiling: base64 inflates a file by about a third.
+    """
+    text = str(source)
+    if text.startswith(("http://", "https://", "data:")):
+        return text
+    path = Path(text)
+    if not path.exists():
+        raise FileNotFoundError(f"keyframe does not exist: {path}")
+    suffix = path.suffix.lower().lstrip(".") or "png"
+    mime = {"jpg": "jpeg", "heic": "heic", "heif": "heif"}.get(suffix, suffix)
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/{mime};base64,{encoded}"
 
 
 def build_request(
@@ -70,7 +91,7 @@ def build_request(
     for reference, role in zip(keyframes, FRAME_ROLES):
         content.append({
             "type": "image_url",
-            "image_url": {"url": str(reference)},
+            "image_url": {"url": image_reference(reference)},
             "role": role,
         })
 
@@ -122,21 +143,32 @@ class H3ApiClient:
             except json.JSONDecodeError:
                 raise RuntimeError(f"HTTP {error.code} from {path}: {raw[:800]}") from None
 
+        # Two response shapes in the wild: `base_resp` on success paths, and a
+        # top-level `error` object on 4xx/5xx.
         base_resp = body.get("base_resp") or {}
         if base_resp.get("status_code"):
-            self._raise_for(base_resp)
+            self._raise_for(str(base_resp.get("status_msg") or ""))
+        error = body.get("error")
+        if isinstance(error, dict):
+            self._raise_for(str(error.get("message") or ""), str(error.get("type") or ""))
         return body
 
-    def _raise_for(self, base_resp: dict) -> None:
-        message = str(base_resp.get("status_msg") or "")
-        if "api key" in message.lower() or base_resp.get("status_code") in {1004, 1008}:
+    def _raise_for(self, message: str, kind: str = "") -> None:
+        haystack = f"{kind} {message}".lower()
+        if "balance" in haystack:
+            raise RuntimeError(
+                f"{message}. The MiniMax account behind this key has no credit — "
+                "top it up at platform.minimax.io. Nothing was generated and "
+                "nothing was charged."
+            )
+        if "api key" in haystack or "authorized" in haystack:
             raise RuntimeError(
                 f"{message}. MINIMAX_BASE_URL ({self.base_url}) and MINIMAX_API_KEY "
                 "must be from the same region — api.minimax.io pairs with a "
                 "platform.minimax.io key, api.minimaxi.com with a "
                 "platform.minimaxi.com key."
             )
-        raise RuntimeError(f"MiniMax API error {base_resp.get('status_code')}: {message}")
+        raise RuntimeError(f"MiniMax API error: {message}")
 
     def create(self, request: dict[str, Any]) -> str:
         body = self._request("/v2/video_generation", request, method="POST")

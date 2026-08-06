@@ -166,3 +166,88 @@ def test_poll_timeout_keeps_the_task_id(monkeypatch):
     with patch("h3_api.urllib.request.urlopen", return_value=FakeResponse({"task": {"status": "processing"}})):
         with pytest.raises(TimeoutError, match="t-1"):
             client.poll("t-1", interval=0, timeout=0.01)
+
+
+# --- real error shapes seen from the live API ---------------------------
+
+
+def _err(kind, message, monkeypatch):
+    monkeypatch.setenv("MINIMAX_API_KEY", "k")
+    client = H3ApiClient()
+    payload = {"type": "error", "error": {"type": kind, "message": message}}
+    return client, payload
+
+
+def test_insufficient_balance_is_not_reported_as_a_key_problem(monkeypatch):
+    client, payload = _err("insufficient_balance_error", "insufficient balance (1008)", monkeypatch)
+    with patch("h3_api.urllib.request.urlopen", return_value=FakeResponse(payload)):
+        with pytest.raises(RuntimeError, match="no credit") as excinfo:
+            client.create(build_request(shot()))
+    assert "same region" not in str(excinfo.value)
+
+
+def test_balance_error_says_nothing_was_charged(monkeypatch):
+    client, payload = _err("insufficient_balance_error", "insufficient balance (1008)", monkeypatch)
+    with patch("h3_api.urllib.request.urlopen", return_value=FakeResponse(payload)):
+        with pytest.raises(RuntimeError, match="nothing was charged"):
+            client.create(build_request(shot()))
+
+
+def test_top_level_authorized_error_mentions_region(monkeypatch):
+    client, payload = _err("authorized_error", "invalid api key (2049)", monkeypatch)
+    with patch("h3_api.urllib.request.urlopen", return_value=FakeResponse(payload)):
+        with pytest.raises(RuntimeError, match="same region"):
+            client.create(build_request(shot()))
+
+
+def test_unclassified_error_still_surfaces_the_message(monkeypatch):
+    client, payload = _err("server_error", "record not found (1000)", monkeypatch)
+    with patch("h3_api.urllib.request.urlopen", return_value=FakeResponse(payload)):
+        with pytest.raises(RuntimeError, match="record not found"):
+            client.create(build_request(shot()))
+
+
+# --- local files become data URIs ---------------------------------------
+
+
+def test_http_url_passes_through():
+    from h3_api import image_reference
+
+    assert image_reference("https://x.test/a.png") == "https://x.test/a.png"
+
+
+def test_existing_data_uri_passes_through():
+    from h3_api import image_reference
+
+    assert image_reference("data:image/png;base64,AAAA") == "data:image/png;base64,AAAA"
+
+
+def test_local_png_becomes_a_data_uri(tmp_path):
+    from h3_api import image_reference
+
+    path = tmp_path / "k.png"
+    path.write_bytes(b"\x89PNG\r\n\x1a\n")
+    assert image_reference(path).startswith("data:image/png;base64,")
+
+
+def test_local_jpg_maps_to_jpeg_mime(tmp_path):
+    from h3_api import image_reference
+
+    path = tmp_path / "k.jpg"
+    path.write_bytes(b"\xff\xd8\xff")
+    assert image_reference(path).startswith("data:image/jpeg;base64,")
+
+
+def test_missing_local_file_raises(tmp_path):
+    from h3_api import image_reference
+
+    with pytest.raises(FileNotFoundError):
+        image_reference(tmp_path / "gone.png")
+
+
+def test_build_request_inlines_a_local_keyframe(tmp_path):
+    path = tmp_path / "k.png"
+    path.write_bytes(b"\x89PNG\r\n\x1a\n")
+    req = build_request({"keyframes": [str(path)], "duration_s": 4, "prompt": "p"})
+    url = req["content"][1]["image_url"]["url"]
+    assert url.startswith("data:image/png;base64,")
