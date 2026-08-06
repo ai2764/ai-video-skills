@@ -76,10 +76,20 @@ def fill_missing_required(
                 continue
             if not (isinstance(declaration, list) and len(declaration) > 1):
                 continue
-            options = declaration[1]
-            if not isinstance(options, dict) or "default" not in options:
+            spec = declaration[1]
+            if not isinstance(spec, dict):
                 continue
-            inputs[name] = options["default"]
+            if "default" in spec:
+                value = spec["default"]
+            elif spec.get("options"):
+                # Plain COMBO lists strings; COMFY_DYNAMICCOMBO_V3 lists dicts
+                # keyed by "key" and carries no default at all. First option is
+                # what the UI would show.
+                first = spec["options"][0]
+                value = first.get("key") if isinstance(first, dict) else first
+            else:
+                continue
+            inputs[name] = value
             added.append(f"{node_id}({node.get('class_type')}).{name}")
     return added
 

@@ -148,3 +148,42 @@ def test_fill_missing_required_ignores_unknown_node_types():
 
     graph = {"1": {"class_type": "NotInObjectInfo", "inputs": {}}}
     assert fill_missing_required(graph, {}) == []
+
+
+def test_fill_missing_required_uses_first_option_of_a_dynamic_combo():
+    """COMFY_DYNAMICCOMBO_V3 carries options but no default at all."""
+    from comfy_backend import fill_missing_required
+
+    graph = {"37": {"class_type": "SaveVideo", "inputs": {}}}
+    info = {
+        "SaveVideo": {
+            "input": {
+                "required": {
+                    "codec": [
+                        "COMFY_DYNAMICCOMBO_V3",
+                        {"options": [{"key": "auto"}, {"key": "h264"}]},
+                    ]
+                }
+            }
+        }
+    }
+    assert fill_missing_required(graph, info) == ["37(SaveVideo).codec"]
+    assert graph["37"]["inputs"]["codec"] == "auto"
+
+
+def test_fill_missing_required_uses_first_option_of_a_plain_combo():
+    from comfy_backend import fill_missing_required
+
+    graph = {"1": {"class_type": "X", "inputs": {}}}
+    info = {"X": {"input": {"required": {"mode": ["COMBO", {"options": ["a", "b"]}]}}}}
+    fill_missing_required(graph, info)
+    assert graph["1"]["inputs"]["mode"] == "a"
+
+
+def test_fill_missing_required_prefers_default_over_options():
+    from comfy_backend import fill_missing_required
+
+    graph = {"1": {"class_type": "X", "inputs": {}}}
+    info = {"X": {"input": {"required": {"m": ["COMBO", {"default": "b", "options": ["a", "b"]}]}}}}
+    fill_missing_required(graph, info)
+    assert graph["1"]["inputs"]["m"] == "b"
