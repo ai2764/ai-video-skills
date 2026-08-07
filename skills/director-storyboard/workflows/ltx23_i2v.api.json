@@ -550,7 +550,7 @@
   "900": {
     "class_type": "LoadImage",
     "inputs": {
-      "image": "小美头像_512x512.png",
+      "image": "placeholder_512x512.png",
       "upload": "image"
     },
     "_meta": {

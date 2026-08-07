@@ -1,6 +1,6 @@
 ---
 name: director-storyboard
-description: Turn scripts and ordered or unordered keyframes into LTX Director 2 timeline prompts, storyboard JSON, and optional runs. Runs on ComfyUI alone; uses Camera Lab when present. Use for 分镜, storyboard analysis, keyframe bridging, Director variants, extensions, retakes, or $director-storyboard.
+description: Turn scripts and ordered or unordered keyframes into LTX Director 2 timeline prompts, storyboard JSON, and optional runs. Runs on ComfyUI alone; uses Camera Lab when present. Use for storyboard analysis, keyframe bridging, Director variants, extensions, retakes, or $director-storyboard.
 ---
 
 # Director Storyboard

@@ -1476,18 +1476,18 @@ Expected: `Junction created`. Confirm the skill loads by invoking `/director-sto
 
 | Spec section | Task |
 |---|---|
-| 仓库形态 (repo layout) | 1, 9, 10 |
-| ComfyUI 直连 adapter — 探测 | 5 |
-| ComfyUI 直连 adapter — 提交 (segments array) | 3, 6 |
-| ComfyUI 直连 adapter — 取结果 | 4 (`outputs`), 6 |
-| ComfyUI adapter 注意事项 (upload, node-id max, autogrow) | 9 step 3 |
+| Repo layout | 1, 9, 10 |
+| ComfyUI-direct adapter — probe | 5 |
+| ComfyUI-direct adapter — submit (segments array) | 3, 6 |
+| ComfyUI-direct adapter — fetch | 4 (`outputs`), 6 |
+| ComfyUI adapter traps (upload, node-id max, autogrow) | 9 step 3 |
 | Camera Lab adapter | 9 step 4 |
-| 路由表 LTX 列 | 5 (probe), 9 |
-| 读图省 token（缩略图 / 并排对比） | 7, 9 step 5 item 6 |
-| 验证 — probe on three machine types | 5 step 5, 10 |
-| 验证 — ComfyUI 直连对比 Camera Lab 首尾帧 | 8 |
-| 验证 — 两个变体同步 | 10 step 2 |
-| 迁移后删除旧目录 | 10 step 6 |
+| Routing table, LTX column | 5 (probe), 9 |
+| Cheap keyframe reads (thumbnails / pair sheets) | 7, 9 step 5 item 6 |
+| Verification — probe on three machine types | 5 step 5, 10 |
+| Verification — ComfyUI-direct vs Camera Lab boundary frames | 8 |
+| Verification — both variants in step | 10 step 2 |
+| Retire the old directories after migrating | 10 step 6 |
 
 Deferred to Round 2 by design: routing rules, H3 local, H3 API, cost reporting, `prompting-h3.md`, `run_storyboard.py` unified CLI.
 

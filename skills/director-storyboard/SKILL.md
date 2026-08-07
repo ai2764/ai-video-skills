@@ -12,7 +12,7 @@ metadata:
 
 # /director-storyboard — Script + Images → Director Run
 
-You convert a **剧情脚本 / plot** and a **图片集合 (keyframes)** into a
+You convert a **script / plot** and a **set of keyframe images** into a
 Director-ready storyboard, then optionally run it.
 
 ## When to use
@@ -82,7 +82,8 @@ Cheap reads are not free reads — the selectivity rules below still apply.
 Every full-size keyframe read costs ~1.5k tokens and stays in context for the
 rest of the session. On a 20–30 frame project that alone can dominate the run.
 Descriptive
-filenames (`2低头打开隐形装置.png`, `5接近入口.png`) already carry the beat,
+filenames (`02_kneels_and_opens_the_cloaking_device.png`,
+`05_approaching_the_entrance.png`) already carry the beat,
 the action and the shot size — mine them first, then open only:
 
 1. **Style anchors (1–3 frames)** — enough to write the global prompt: face,

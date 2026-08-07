@@ -1139,26 +1139,26 @@ git commit -m "docs: route across LTX and H3 in both skill variants"
 
 | Spec section | Task |
 |---|---|
-| 路由表 (3×3, two empty cells) | 2, 7 step 1 |
-| 路由规则 1–4 | 2 (tests pin each rule) |
-| 快运镜判读走并排缩略图（Round 1 Task 7 的 `pair_sheet`） | 8 step 1 |
-| 后端契约 — 探测/提交/取结果 | 3, 4, 5, 6 |
+| Routing table (3x3, two empty cells) | 2, 7 step 1 |
+| Routing rules 1-4 | 2 (tests pin each rule) |
+| Fast-camera judgement from pair sheets (Round 1 Task 7 `pair_sheet`) | 8 step 1 |
+| Backend contract — probe / submit / fetch | 3, 4, 5, 6 |
 | Adapter: MiniMax H3 API | 3, 7 step 4 |
-| Adapter: H3 本地 | 4, 7 step 3 |
-| H3 本地 vs API 探测在前询问在后 | 5 (`detect_available` + the `ask` branch) |
-| 许可证 Applicable Territory 提示 | 5 step 1, 7 step 3, 8 step 1 |
-| 时长 clamp [4,15]，<4s 不进 H3 | 2 (rule 3), 3 (`build_request`) |
-| 声音默认剥掉 | 3 (`strip_audio`), 6 (`--keep-audio`) |
-| 分辨率默认 768P/16:9 | 3 (`build_request` defaults) |
-| 提示词两套契约不能混 | 7 step 2, 8 step 2 |
-| 成本可见性 | 2 (`estimate_cost`), 5, 6 |
-| 错误处理 — key 缺失/区域错配 | 3 (`H3ApiClient.__init__`, `_request`) |
-| 错误处理 — failed/cancelled 不重试 | 3 (`poll` raises) |
-| 错误处理 — 轮询超时保留 task_id | 3 (`poll` TimeoutError message) |
-| 错误处理 — 超 15 秒报错不截断 | 3 (`build_request` raises) |
-| 验证 — act3 dry-run 约 $6.2 | 5 step 2 |
-| 验证 — 真实调用一个 4 秒段 + 剥音轨 | 6 step 3 |
-| 待定：seed / prompt_optimizer | Task 6 step 3 is where a real response reveals them; they stay out of the schema until then |
+| Adapter: H3 local | 4, 7 step 3 |
+| H3 local vs API: probe first, ask second | 5 (`detect_available` + the `ask` branch) |
+| Licence Applicable Territory notice | 5 step 1, 7 step 3, 8 step 1 |
+| Duration clamp [4,15]; under 4s never reaches H3 | 2 (rule 3), 3 (`build_request`) |
+| Audio stripped by default | 3 (`strip_audio`), 6 (`--keep-audio`) |
+| Resolution defaults to 768P / 16:9 | 3 (`build_request` defaults) |
+| The two prompt contracts must not be mixed | 7 step 2, 8 step 2 |
+| Cost visibility | 2 (`estimate_cost`), 5, 6 |
+| Error handling — missing key / region mismatch | 3 (`H3ApiClient.__init__`, `_request`) |
+| Error handling — failed/cancelled, no retry | 3 (`poll` raises) |
+| Error handling — poll timeout keeps the task_id | 3 (`poll` TimeoutError message) |
+| Error handling — over 15s raises rather than truncating | 3 (`build_request` raises) |
+| Verification — real plan dry-run lands near $6.2 | 5 step 2 |
+| Verification — one real 4s call, audio stripped | 6 step 3 |
+| Open: seed / prompt_optimizer | Task 6 step 3 is where a real response reveals them; they stay out of the schema until then |
 
 **Placeholder scan:** No TBD/TODO. Two steps intentionally end in "record what you found" (Task 6 step 3 on local-path-vs-URL, Task 7 step 4) — those are empirical questions the official docs do not answer (`/docs/api-reference/*` currently 404s), and each names the exact file the finding goes into.
 
