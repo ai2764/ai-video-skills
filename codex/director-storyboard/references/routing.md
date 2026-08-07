@@ -22,10 +22,20 @@ does.
 **1. Keyframe count picks the row.** 1 → `i2v`; 2 → `flf`; ≥3 → `timeline`.
 With only one keyframe use i2v, not a one-segment Director run.
 
-**2. Fast camera movement picks the column.** Segments whose adjacent keyframes
-show large displacement or a big angle change go to H3; the rest stay on LTX.
-The judgement is **per segment**, not per storyboard — send only the hard spans
-to H3.
+**2. Fast camera movement picks the column — and H3 must earn it.** Segments
+whose adjacent keyframes show large displacement or a big angle change go to H3;
+the rest stay on LTX. The judgement is **per segment**, not per storyboard.
+
+H3 is roughly **an order of magnitude slower** than LTX for the same shot
+(measured on one 6 s shot: LTX Director 1.3 min against 4.0–7.4 min for H3), and
+both generate audio, so H3 is not a general-purpose upgrade. Send a segment to
+H3 only when it needs something LTX cannot do:
+
+- structure holding together through violent motion
+- one unbroken take longer than an LTX segment comfortably carries
+- an identity locked by reference images
+
+A locked-off shot of someone talking has none of those. Default it to LTX.
 
 **This judgement is the agent's, not the script's.** `fast_camera` is an *input*
 to routing. Read the keyframes pairwise (see the thumbnail rules in `SKILL.md`)

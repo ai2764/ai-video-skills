@@ -58,8 +58,10 @@ you assumed about them.
   **shot scale → subject action → camera motion → environmental motion →
   landing state**.
 - Keep one dominant beat per segment. Use dialogue in quotation marks.
-- Put prohibitions in `negative_prompt`, not as `No ...` instructions inside
-  local prompts.
+- Put prohibitions in `negative_prompt` **only where the backend has one**. LTX
+  i2v/flf do; the LTX Director timeline node and H3 do not, and silently ignore
+  the field. Where there is none, phrase every constraint positively — state what
+  is in frame, not what is absent.
 - Treat images as visual targets. Explicitly write the motion between targets.
 - Add visible movement to every segment; do not lower guide strength merely to
   fix a slideshow result.
@@ -83,6 +85,10 @@ Then route each segment across two models (`references/routing.md`):
   on LTX. Decide **per segment**. Judge it from side-by-side pair sheets
   (`--mode pairs` above); `fast_camera` is an input you set, not something the
   script derives.
+- H3 is about an order of magnitude slower than LTX for the same shot and both
+  generate audio, so H3 must earn it: structure through violent motion, one long
+  unbroken take, or an identity locked by references. A locked-off talking shot
+  has none of those — default it to LTX.
 - Under 4 seconds vetoes H3 regardless of camera movement.
 - H3 can never run timeline mode — first/last anchors only.
 
@@ -105,6 +111,7 @@ history and output directory before resubmitting.
   timing, strengths, or anti-slideshow motion.
 - `references/backend-contract.md` before touching any backend.
 - `references/operations.md` when submitting, extending, retaking or troubleshooting.
+- `references/audio-sfx.md` when generating dialogue or sound effects rather than picture.
 - `references/routing.md` before deciding which model runs a segment.
 - `references/prompting-h3.md` for any segment routed to H3 — not `prompting.md`.
 - `references/backend-comfyui.md`, `references/backend-camera-lab.md`,
@@ -120,7 +127,9 @@ Do not load all references by default.
 
 - Keep identity, wardrobe, geography, lighting, and object design consistent
   unless the script deliberately changes them.
-- Ensure the negative prompt does not forbid a required event.
+- Where a negative prompt exists, ensure it does not forbid a required event.
+- Confirm what the character can physically do in this moment (sighted, free,
+  conscious, face visible) before writing their reaction.
 - Give complex actions enough time and avoid multi-event monologues in short
   segments.
 - Never invent ComfyUI paths or claim generation succeeded without API

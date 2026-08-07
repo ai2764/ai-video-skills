@@ -58,6 +58,82 @@ No `strength`. No retake. No negative prompt.
 If a shot needs several timed events, or needs one span re-rolled while the rest
 stays, it belongs on LTX Director, not H3.
 
+## Write the performance, not the mechanics
+
+The most common way a shot comes out dead is a prompt that lists muscle
+movements. "The brow softens, the jaw unlocks, the eyelids lift" describes a
+face moving; it does not tell the model what the person is *doing*.
+
+Write the intent, then let the mechanics follow:
+
+| Mechanics | Performance |
+|---|---|
+| her brow softens, her jaw unlocks | she is enduring this, not just suffering it — jaw clamped against a sound she refuses to let out |
+| her eyes open | behind the lids she is not there yet, eyes unfocused; then the pupils snap down and catch, and she is suddenly present |
+| he salutes | the looseness drops out of him in an instant and the salute is crisp, no performance in it |
+
+This matters more, not less, when the face is hidden. Under a helmet, a mask, a
+visor or sunglasses, the performance has to move into breathing, head angle,
+shoulders and hands — name those explicitly or the shot will be inert.
+
+## Establish what the character can do before writing what they do
+
+Check the character's state at this moment in the story before writing a single
+reaction. Blinded, deafened, injured, restrained, masked, unconscious — each one
+closes off a channel, and writing a reaction through a closed channel produces a
+shot that contradicts the story.
+
+A character who cannot see must react by hearing and touch: the light going, the
+sound arriving, the ground shaking — head turning to aim an ear rather than a
+face. Written as a visual reaction instead, they will look straight at the thing
+they cannot see.
+
+## Every party to an action needs its own performance
+
+If a shot has someone acting and someone receiving, write both. A prompt that
+covers the shooter — muzzle flash, recoil, spent cases — and says nothing about
+what is being shot will produce a target that stands there unaffected.
+
+Give the receiving side its own beats: impact, recoil, flinch, shielding,
+retreat, sound. The same applies to machines and environments — something being
+struck, dragged or torn should visibly resist and fail.
+
+## The state of an action controls how much of it you get
+
+The model reads the aspect of the verb. `The muzzle flash dies and the last case
+spins away` describes a burst that has already finished, and yields exactly one
+shot. To get a sustained action, write it as ongoing and mark its end
+explicitly: "the muzzle flashing four or five times in quick succession... only
+then does she stop firing".
+
+## Do not use speech verbs for description
+
+Reserve "say / read / tell / whisper / call" for lines that are actually
+spoken, and always with the line in quotes. A speech verb followed by a clause
+in the description will be spoken aloud — H3 has no chat template, and quotes
+are the only signal separating dialogue from narration.
+
+Observed: `as she reads that it is gone` produced spoken dialogue in the output.
+Write `her eyes scan the dark indicators once` instead.
+
+When only one line should be spoken, say so: "She speaks exactly one word and no
+more... that single word is the only speech in the entire shot."
+
+## Count the words before choosing a duration
+
+Natural conversational delivery runs about 150 words per minute — roughly 2.5
+words per second. Multiply before committing:
+
+| Words | Natural duration |
+|---|---|
+| 20 | ~8 s |
+| 37 | ~15 s |
+| 78 | ~31 s |
+
+H3 tops out at 15 s, so anything past ~37 words needs splitting — and splitting
+dialogue across takes changes the voice (see below). Compressing instead of
+splitting produces newsreader pace, which is usually not what was asked for.
+
 ## One prompt holds one running instruction
 
 Observed across two takes of the same shot, same refs, same seed:

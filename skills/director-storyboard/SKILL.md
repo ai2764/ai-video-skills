@@ -224,9 +224,29 @@ displacement off the **background**, so give it moving reference points:
 If it still stalls after this, stop adding words — lengthen the segment so there is time
 to cross ground, or let a dolly-in carry the displacement instead of the character.
 
-### Negative prompt
+### Negative prompt — check the backend actually has one
 
-Default if user does not specify:
+**Not every backend accepts a negative prompt, and the ones that do not fail
+silently.** Write the field, get no error, and assume a constraint is in place
+that was never applied.
+
+| Backend | Negative prompt |
+|---|---|
+| LTX i2v / flf | **Yes** — the graphs carry `CLIPTextEncode` nodes for it |
+| LTX Director timeline | **No** — the `LTXDirector` node has no negative input at all; the graph derives its negative from `ConditioningZeroOut`. The `negative_prompt` field in the storyboard is ignored on this path |
+| MiniMax H3 (local and API) | **No** — no negative conditioning exists in the model |
+
+Check the node's declared inputs before relying on it:
+
+```bash
+py -3 -c "import json,urllib.request; d=json.load(urllib.request.urlopen('http://127.0.0.1:8188/object_info/<NodeName>')); i=d['<NodeName>']['input']; print(list((i.get('required') or {})) + list((i.get('optional') or {})))"
+```
+
+**Where there is no negative, every constraint must be phrased positively** —
+state what *is* in the frame rather than what is not. "No full body" becomes
+"only limbs enter frame, the torso stays out of shot".
+
+Default negative where the backend supports one:
 
 ```text
 blurry, distorted face, identity change, clothing change, flicker, jump cut, text overlay, watermark
@@ -283,8 +303,10 @@ Notes:
   strength ~0.75–0.8.
 - **Audio segments**: top-level `"audio_segments": [{"audio", "start", "duration",
   "volume", "trimStart"}]`, usually with `"inpaint_audio": true`.
-- The negative prompt must not forbid any event a segment requires (e.g. remove
-  `ship explodes` from the negative before adding an explosion beat).
+- Where the backend has a negative prompt, it must not forbid an event a segment
+  requires (e.g. remove `ship explodes` from the negative before adding an
+  explosion beat). Where it has none, the field is inert — see *Negative prompt*
+  above.
 
 Also show the user a short markdown table:
 
@@ -415,6 +437,11 @@ Hard-won limits:
 - Change identity mid-timeline without user intent
 - Commit generated videos, uploads, or `tasks/` outputs
 - Skip writing the JSON to disk when the user asked to run (runner needs a file or CLI args)
+- **Write a reaction the character cannot physically have.** Establish whether
+  they can see, hear, move and speak in this moment before writing how they
+  respond; a blinded character reacting visually contradicts the story.
+- **Leave the receiving side of an action blank.** If something is struck,
+  dragged or torn, write its reaction too, or it will stand there unaffected.
 - **Carry LTX prompt structure into an H3 segment.** No negative prompt, no
   `|`-separated local prompts, no `strength`. H3 accepts none of them and will
   encode the words as picture content instead of ignoring them.
@@ -431,6 +458,7 @@ Load only what the task needs — do not read all of these by default.
 - `references/storyboard.schema.json` — machine schema
 - `references/example_storyboard.json` — sample payload
 - `references/operations.md` — submitting, variants, retakes, extensions, troubleshooting
+- `references/audio-sfx.md` — when the deliverable is sound: dialogue and effect libraries
 - `references/backend-contract.md` — what the skill needs from a backend
 - `references/backend-comfyui.md` — ComfyUI direct adapter
 - `references/backend-camera-lab.md` — Camera Lab adapter

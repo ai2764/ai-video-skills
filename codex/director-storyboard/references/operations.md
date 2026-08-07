@@ -30,6 +30,30 @@ a new tail event with a matching image guide at about `0.75–0.8`.
 4. Dry-run whenever the payload or any path changed.
 5. If anything routes to a paid backend, print the cost and get a yes.
 
+### Print what will actually be generated, not what you meant to change
+
+Two failure modes worth a hard check each, because both cost a full generation
+to discover:
+
+**After editing dialogue, print the resulting line and read it.** A
+search-and-replace that misses — because the source string was wrapped across
+lines, or the phrasing differed slightly — leaves the old text in place and the
+job still submits. Assert on the result, and print it:
+
+```python
+assert "old wording" not in prompt
+print([l for l in prompt.splitlines() if '"' in l])
+```
+
+**Assert keyframe binding before submitting.** Confirm the first and last frame
+resolved to the files intended, in that order:
+
+```python
+assert (bound_first, bound_last) == (first_path.name, last_path.name)
+```
+
+Discovering a reversed pair after a twenty-minute generation is avoidable.
+
 After submission, report the job id and where to watch it. Claim completion only
 once the backend reports done **and** the output file exists on disk. Verify with
 `ffprobe`; extract frames only to check a specific seam or reported defect.

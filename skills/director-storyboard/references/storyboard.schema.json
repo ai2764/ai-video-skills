@@ -7,7 +7,10 @@
   "additionalProperties": true,
   "properties": {
     "global_prompt": { "type": "string", "minLength": 1 },
-    "negative_prompt": { "type": "string" },
+    "negative_prompt": {
+      "type": "string",
+      "description": "Only some backends accept this. LTX i2v/flf do; the LTX Director timeline node and MiniMax H3 have no negative input at all and silently ignore it. Where it is ignored, phrase constraints positively in the prompts instead."
+    },
     "width": { "type": "integer", "minimum": 64, "maximum": 4096 },
     "height": { "type": "integer", "minimum": 64, "maximum": 4096 },
     "seed": { "type": ["integer", "null"] },
