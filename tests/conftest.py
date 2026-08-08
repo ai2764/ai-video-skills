@@ -15,4 +15,4 @@ def repo_root() -> Path:
 
 @pytest.fixture
 def workflows_dir(repo_root: Path) -> Path:
-    return repo_root / "skills" / "director-storyboard" / "workflows"
+    return repo_root / "workflows"

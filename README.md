@@ -21,17 +21,22 @@ overwriting each other's inputs. The traps sections are the log of those.
 skills/<name>/            Claude / Grok format
   SKILL.md                the method
   references/             backend adapters, prompt contracts, operations
-  workflows/              API-format graphs the skill fills in   (if it runs jobs)
-  scripts/                stdlib-only helpers                     (if it runs jobs)
 codex/<name>/             Codex format (condensed)
   SKILL.md
   agents/openai.yaml
   references/
+scripts/                  stdlib-only helpers, shared by both variants
+workflows/                API-format graphs the skills fill in
 tests/                    pytest, shared across skills
 ```
 
 Both variants of a skill describe the same method; only phrasing and density
 differ. Keep them in step when editing.
+
+`scripts/` and `workflows/` live at the root rather than inside a skill so the
+two variants run **one** copy instead of two that drift apart. Commands inside
+a `SKILL.md` are written relative to the repository root, which from a skill
+directory is `../..`.
 
 ## Requirements
 
@@ -52,7 +57,7 @@ your machine actually has:
 why the rest are unavailable:
 
 ```bash
-py -3 skills/director-storyboard/scripts/probe_backends.py
+py -3 scripts/probe_backends.py
 ```
 
 Writing a storyboard needs none of it — only running one does.
@@ -70,6 +75,10 @@ ln -s /path/to/ai-video-skills/codex/<name> ~/.codex/skills/<name>
 ```
 
 On Windows use a junction: `mklink /J <link> <target>`.
+
+The link points into the clone, so `../..` from the linked directory still
+lands on the repository root and the shared `scripts/` and `workflows/` stay
+reachable. Keep the clone in place — a copied-out `SKILL.md` has no helpers.
 
 ## Backends
 
@@ -112,7 +121,9 @@ Requires `pytest` and, for the thumbnail tests, `ffmpeg`/`ffprobe` on PATH.
    from a backend.
 2. Write `codex/<name>/SKILL.md` and `codex/<name>/agents/openai.yaml`.
 3. Put backend-specific detail in `references/`, never in the method itself.
-4. List it in the table above.
+4. Put helpers in the shared root `scripts/` and graphs in root `workflows/` —
+   never inside a skill, where only one variant could reach them.
+5. List it in the table above.
 
 Keep the method free of any particular production: no film titles, character
 names or project paths. A rule earned on one shoot is only worth writing down in

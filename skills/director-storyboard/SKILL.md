@@ -36,6 +36,13 @@ The generation backend is pluggable — see `references/backend-contract.md`.
 ComfyUI on its own is enough; Camera Lab is used when available because its
 image staging and audio handling are already tuned.
 
+## Where the helpers live
+
+`scripts/` and `workflows/` sit at the **repository root**, beside `skills/`
+and `codex/`, so both skill variants use one copy rather than two that drift.
+Every command below is written relative to that root — from this file's own
+directory that is `../..`. Resolve it once at the start of a run and reuse it.
+
 ## Step 1 — Gather inputs
 
 Collect:

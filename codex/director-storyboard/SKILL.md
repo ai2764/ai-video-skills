@@ -11,6 +11,13 @@ result as stitched independent I2V clips.
 The generation backend is pluggable — see `references/backend-contract.md`.
 ComfyUI on its own is enough.
 
+## Where the helpers live
+
+`scripts/` and `workflows/` sit at the **repository root**, beside `skills/`
+and `codex/`, so both skill variants use one copy. Every command below is
+written relative to that root — from this file's own directory that is `../..`.
+Resolve it once at the start of a run and reuse it.
+
 ## Workflow
 
 1. Collect the plot, images, target duration, resolution, seed, and whether to
